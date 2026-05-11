@@ -11,17 +11,17 @@ describe Stupidedi::Parser::Navigation do
 
   def start_transaction_set(details, strict)
     b = Stupidedi::Parser::BuilderDsl.build(config(details), strict)
-    b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", id.isa, "0", "T", ":")
-    b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, id.gs, b.default, "005010")
+    b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", id.isa, "0", "T", ":")
+    b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, id.gs, b.default, "DEMO01")
     b. ST("999", id.st)
   end
 
   def config(details)
-    Stupidedi::Config.default.customize do |x|
-      x.functional_group.register("005010",
-        Definitions::FunctionalGroupDelegator.new(x.functional_group.at("005010")))
+    Synthetic.config.customize do |x|
+      x.functional_group.register("DEMO01",
+        Definitions::FunctionalGroupDelegator.new(x.functional_group.at("DEMO01")))
 
-      x.transaction_set.register("005010", "FA", "999") do
+      x.transaction_set.register("DEMO01", "FA", "999") do
         Stupidedi::Schema::TransactionSetDef.build("FA", "999", "Example",
           Header("1", Segment(10, :ST, s_mandatory, bounded(1))),
           *details,

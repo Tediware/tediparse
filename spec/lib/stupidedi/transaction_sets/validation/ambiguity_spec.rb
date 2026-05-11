@@ -3,13 +3,33 @@ describe "Stupidedi::TransactionSets::Validation::Ambiguity" do
 
   let(:d) { Stupidedi::Schema }
   let(:b) { Stupidedi::TransactionSets::Builder }
-  let(:s) { Stupidedi::TransactionSets::FiftyTen::SegmentDefs }
-  let(:e) { Stupidedi::TransactionSets::FiftyTen::Implementations::ElementReqs }
-  let(:r) { Stupidedi::TransactionSets::FiftyTen::Implementations::SegmentReqs }
+  let(:e) { Stupidedi::TransactionSets::Common::Implementations::ElementReqs }
+  let(:r) { Stupidedi::TransactionSets::Common::Implementations::SegmentReqs }
 
-  def audit(t, msg=nil)
+  # Inline synthetic segments for the cases below. Element shapes don't
+  # matter — the validator only looks at element_uses + their value
+  # constraints when deciding whether sibling slots are discriminable.
+  let(:s) do
+    de = Stupidedi::Versions::Common::ElementReqs
+    text = Stupidedi::Versions::Common::ElementTypes::AN.new(:DE_TEXT, "Free Text", 1, 30)
+    Module.new do
+      const_set(:ST, Stupidedi::Schema::SegmentDef.build(:ST, "Synthetic ST", "",
+                       text.simple_use(de::Mandatory, Stupidedi::Schema::RepeatCount.bounded(1)),
+                       text.simple_use(de::Optional,  Stupidedi::Schema::RepeatCount.bounded(1))))
+      const_set(:HI, Stupidedi::Schema::SegmentDef.build(:HI, "Synthetic HI", "",
+                       text.simple_use(de::Optional, Stupidedi::Schema::RepeatCount.bounded(1))))
+      const_set(:LS, Stupidedi::Schema::SegmentDef.build(:LS, "Synthetic LS", "",
+                       text.simple_use(de::Optional, Stupidedi::Schema::RepeatCount.bounded(1))))
+      const_set(:NTE, Stupidedi::Schema::SegmentDef.build(:NTE, "Synthetic NTE", "",
+                       text.simple_use(de::Optional, Stupidedi::Schema::RepeatCount.bounded(1)),
+                       text.simple_use(de::Optional, Stupidedi::Schema::RepeatCount.bounded(1))))
+    end
+  end
+
+  def audit(t)
     Stupidedi::TransactionSets::Validation::Ambiguity.build(t,
-      Stupidedi::Versions::FiftyTen::FunctionalGroupDef).audit
+      Synthetic::FunctionalGroupDef,
+      Synthetic::InterchangeDef).audit
   end
 
   def complain(*patterns)
