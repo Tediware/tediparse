@@ -65,6 +65,13 @@ module Synthetic
       e::SY_GS_COUNT.simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_CTRL_NUM.simple_use(r::Mandatory, s::RepeatCount.bounded(1)))
 
+    # Two-element ST mirrors the basic X12 ST wire shape. There is a parallel
+    # 3-element ST in `Definitions::SegmentDefs::ST` (see spec/support/
+    # definitions.rb) that the wide-surface specs see via
+    # `Definitions::FunctionalGroupDelegator#segment_dict`. The two
+    # definitions are intentionally distinct: this one is what an unwrapped
+    # `Synthetic.config` exposes; that one is what specs which wrap with the
+    # delegator see. If you change one shape, consider the other.
     ST = s::SegmentDef.build(:ST, "Transaction Set Header", "",
       e::SY_ST_ID  .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_ST_CTRL.simple_use(r::Mandatory, s::RepeatCount.bounded(1)))

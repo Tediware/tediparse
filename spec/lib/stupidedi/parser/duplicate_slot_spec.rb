@@ -19,9 +19,9 @@ describe "Duplicate sibling segment slots in a single loop" do
   let(:e) { Stupidedi::Versions::Common::ElementReqs   }
   let(:s) { Synthetic::SegmentDefs                     }
 
-  # Generic placeholder element types — single-character ID with a code list
-  # of {P, O} lets us discriminate the two opener slots; AN with no code
-  # list keeps the ambiguous slot indiscriminate.
+  # ID qualifier with a {P, O} code list lets ValueBased discriminate the
+  # two opener slots; AN (defined below) carries no code list, so the two
+  # CC slots remain genuinely indistinguishable on element value alone.
   let(:de_qualifier) do
     Stupidedi::Versions::Common::ElementTypes::ID.new(:DE_QUAL, "Qualifier", 1, 1,
       d::CodeList.internal({"P" => "Primary", "O" => "Override"}))
