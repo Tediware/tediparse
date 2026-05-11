@@ -1,7 +1,7 @@
 # Tediparse
 
-* [GitHub project](https://github.com/Tediware/tediparse)
-* [Human Documentation](https://github.com/Tediware/tediparse/tree/master/doc)
+- [GitHub project](https://github.com/Tediware/tediparse)
+- [Human Documentation](https://github.com/Tediware/tediparse/tree/master/doc)
 
 Tediparse is a library for **parsing, generating, and validating** ASC X12 EDI
 documents. You bring the X12 transaction-set grammar; the library walks it.
@@ -37,13 +37,13 @@ part of tediparse.
 The canonical reference for how to wire up your own grammar against the
 engine lives in the spec harness:
 
-* `spec/support/synthetic/demo.rb` — a small adversarial transaction set
+- `spec/support/synthetic/demo.rb` — a small adversarial transaction set
   built with `Stupidedi::TransactionSets::Builder`. Exercises composites,
   code lists, interleaved segments and child loops, qualifier-discriminated
   sibling loops, and the `P` syntax note.
-* `spec/support/synthetic/interchange_def.rb` — minimal ISA envelope.
-* `spec/support/synthetic/functional_group_def.rb` — minimal GS envelope.
-* `spec/support/synthetic/config.rb` — wires the three pieces into a usable
+- `spec/support/synthetic/interchange_def.rb` — minimal ISA envelope.
+- `spec/support/synthetic/functional_group_def.rb` — minimal GS envelope.
+- `spec/support/synthetic/config.rb` — wires the three pieces into a usable
   `Stupidedi::Config`.
 
 Mirror that shape in your own application and register against
@@ -71,17 +71,15 @@ This product includes software from `stupidedi` by Kyle Putnam, available at
 ### Fork relationship
 
 Tediparse is a fork of [stupidedi](https://github.com/kputnam/stupidedi),
-maintained by [Adrian Duyzer](https://github.com/aduyzer) at
+maintained by [Adrian Duyzer](https://github.com/adriand) at
 [Tediware](https://github.com/Tediware). The fork was created to accelerate
 development and support a broader set of X12 documents. The internal Ruby
-module name remains `Stupidedi` for backward compatibility; `require
-"tediparse"` and `require "stupidedi"` both work.
+module name remains `Stupidedi` for backward compatibility; `require "tediparse"` and `require "stupidedi"` both work.
 
 ### Credits
 
-* __Original author__: [Kyle Putnam](https://github.com/kputnam)
-* __Upstream maintainer__: [Isi Robayna](https://github.com/irobayna)
-* __Tediparse maintainer__: [Adrian Duyzer](https://github.com/aduyzer)
+- **Original author**: [Kyle Putnam](https://github.com/kputnam)
+- **Tediparse maintainer**: [Adrian Duyzer](https://github.com/adriand)
 
 ## What problem does it solve?
 
@@ -242,13 +240,13 @@ bundle exec rake spec
 It isn't a translator. It doesn't have bells and whistles, like the
 commercial EDI translators have, so it...
 
-* Doesn't convert to/from XML, CSV, etc
-* Doesn't transmit or receive files
-* Doesn't do encryption
-* Doesn't connect to your database
-* Doesn't queue messages for delivery or receipt
-* Doesn't generate acknowledgements
-* Doesn't have a graphical interface
+- Doesn't convert to/from XML, CSV, etc
+- Doesn't transmit or receive files
+- Doesn't do encryption
+- Doesn't connect to your database
+- Doesn't queue messages for delivery or receipt
+- Doesn't generate acknowledgements
+- Doesn't have a graphical interface
 
 These features are orthogonal to the problem tediparse aims to solve, but
 they can certainly be implemented with other code taking advantage of
