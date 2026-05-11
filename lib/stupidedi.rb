@@ -27,8 +27,6 @@ require "ruby/try"
 module Stupidedi
   # @todo deprecated
   autoload :Builder,          "stupidedi/builder"
-  autoload :Contrib,          "stupidedi/contrib"
-  autoload :Guides,           "stupidedi/guides"
 
   autoload :Color,            "stupidedi/color"
   autoload :Config,           "stupidedi/config"
@@ -46,7 +44,6 @@ module Stupidedi
   autoload :Versions,         "stupidedi/versions"
   autoload :Writer,           "stupidedi/writer"
   autoload :Zipper,           "stupidedi/zipper"
-  autoload :Versions,         "stupidedi/versions"
   autoload :VERSION,          "stupidedi/version"
 
   def self.caller(depth = 2)
