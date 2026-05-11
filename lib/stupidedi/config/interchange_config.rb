@@ -46,10 +46,8 @@ module Stupidedi
       # @example
       #   table = InterchangeConfig.new
       #
-      #   table.register("00602") { SixOhTwo::InterchangeDef }
-      #   table.register("00501") { FiveOhOne::InterchangeDef }
-      #   table.register("00401") { FourOhOne::InterchangeDef }
-      #   table.register("00304") { ThreeOhFour::InterchangeDef }
+      #   table.register("00501") { MyApp::Envelopes::FiveOhOne }
+      #   table.register("00401") { MyApp::Envelopes::FourOhOne }
       #
       # @return [void]
       def register(version, definition = nil, &constructor)

@@ -30,7 +30,6 @@ module Stupidedi
 
   autoload :Color,            "stupidedi/color"
   autoload :Config,           "stupidedi/config"
-  autoload :Editor,           "stupidedi/editor"
   autoload :Either,           "stupidedi/either"
   autoload :Exceptions,       "stupidedi/exceptions"
   autoload :Inspect,          "stupidedi/inspect"
