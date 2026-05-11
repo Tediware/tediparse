@@ -7,17 +7,17 @@ require "spec_helper"
 #
 #   ai/tickets/tediparse-04-resolve-duplicate-segment-slot-nondeterminism.md
 #
-# Uses generic placeholder segment ids (:AA, :CC) and a synthetic transaction
-# set "XX*999" registered into a fresh Config so the test is independent of
+# Uses generic placeholder segment ids (:AA, :CC) and synthetic transaction
+# sets registered into the synthetic Config so the test is independent of
 # any X12 transaction-set definition.
 describe "Duplicate sibling segment slots in a single loop" do
   using Stupidedi::Refinements
 
-  let(:b) { Stupidedi::TransactionSets::Builder       }
+  let(:b) { Stupidedi::TransactionSets::Builder        }
   let(:d) { Stupidedi::Schema                          }
-  let(:r) { Stupidedi::Versions::FiftyTen::SegmentReqs }
-  let(:e) { Stupidedi::Versions::FiftyTen::ElementReqs }
-  let(:s) { Stupidedi::Versions::FiftyTen::SegmentDefs }
+  let(:r) { Stupidedi::Versions::Common::SegmentReqs   }
+  let(:e) { Stupidedi::Versions::Common::ElementReqs   }
+  let(:s) { Synthetic::SegmentDefs                     }
 
   # Generic placeholder element types — single-character ID with a code list
   # of {P, O} lets us discriminate the two opener slots; AN with no code
@@ -55,7 +55,7 @@ describe "Duplicate sibling segment slots in a single loop" do
     aa = aa_def
     cc = cc_def
 
-    b.build("XX", "999", "Test - duplicate slots in one loop",
+    b.build("ZZ", "999", "Test - duplicate slots in one loop",
       d::TableDef.header("Heading",
         s::ST.use(100, r::Mandatory, d::RepeatCount.bounded(1)),
         d::LoopDef.build("L1", d::RepeatCount.bounded(1),
@@ -80,15 +80,15 @@ describe "Duplicate sibling segment slots in a single loop" do
 
   let(:config) do
     ts = transaction_set_def
-    Stupidedi::Config.default.customize do |c|
-      c.transaction_set.register("005010", "XX", "999") { ts }
+    Synthetic.config.customize do |c|
+      c.transaction_set.register("DEMO01", "ZZ", "999") { ts }
     end
   end
 
   def envelope(body)
     <<~EDI.gsub("\n", "~")
-      ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *230101*1200*U*00501*000000001*0*P*>
-      GS*XX*SENDER*RECEIVER*20230101*1200*1*X*005010
+      ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *250101*0830*^*DEMO01*000000001*0*T*:
+      GS*ZZ*SENDER*RECEIVER*20250101*0830*1*X*DEMO01
       ST*999*0001
       #{body}
       SE*99*0001
@@ -176,7 +176,7 @@ describe "Duplicate sibling segment slots in a single loop" do
     let(:ambiguous_transaction_set_def) do
       cc = cc_def
 
-      b.build("XX", "998", "Test - ambiguous across parent loops",
+      b.build("ZZ", "998", "Test - ambiguous across parent loops",
         d::TableDef.header("Heading",
           s::ST.use(100, r::Mandatory, d::RepeatCount.bounded(1)),
           d::LoopDef.build("LA", d::RepeatCount.bounded(1),
@@ -194,15 +194,15 @@ describe "Duplicate sibling segment slots in a single loop" do
 
     let(:ambiguous_config) do
       ts = ambiguous_transaction_set_def
-      Stupidedi::Config.default.customize do |c|
-        c.transaction_set.register("005010", "XX", "998") { ts }
+      Synthetic.config.customize do |c|
+        c.transaction_set.register("DEMO01", "ZZ", "998") { ts }
       end
     end
 
     def envelope_998(body)
       <<~EDI.gsub("\n", "~")
-        ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *230101*1200*U*00501*000000001*0*P*>
-        GS*XX*SENDER*RECEIVER*20230101*1200*1*X*005010
+        ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *250101*0830*^*DEMO01*000000001*0*T*:
+        GS*ZZ*SENDER*RECEIVER*20250101*0830*1*X*DEMO01
         ST*998*0001
         #{body}
         SE*99*0001
@@ -249,7 +249,7 @@ describe "Duplicate sibling segment slots in a single loop" do
       bb = bb_def
       cc = cc_def
 
-      b.build("XX", "997", "Test - interleaved child loop",
+      b.build("ZZ", "997", "Test - interleaved child loop",
         d::TableDef.header("Heading",
           s::ST.use(100, r::Mandatory, d::RepeatCount.bounded(1)),
           d::LoopDef.build("L1", d::RepeatCount.bounded(1),
@@ -274,15 +274,15 @@ describe "Duplicate sibling segment slots in a single loop" do
 
     let(:interleaved_config) do
       ts = interleaved_transaction_set_def
-      Stupidedi::Config.default.customize do |c|
-        c.transaction_set.register("005010", "XX", "997") { ts }
+      Synthetic.config.customize do |c|
+        c.transaction_set.register("DEMO01", "ZZ", "997") { ts }
       end
     end
 
     def envelope_997(body)
       <<~EDI.gsub("\n", "~")
-        ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *230101*1200*U*00501*000000001*0*P*>
-        GS*XX*SENDER*RECEIVER*20230101*1200*1*X*005010
+        ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *250101*0830*^*DEMO01*000000001*0*T*:
+        GS*ZZ*SENDER*RECEIVER*20250101*0830*1*X*DEMO01
         ST*997*0001
         #{body}
         SE*99*0001

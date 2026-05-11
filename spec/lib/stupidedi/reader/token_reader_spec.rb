@@ -1,24 +1,10 @@
 describe Stupidedi::Reader::TokenReader do
   using Stupidedi::Refinements
 
-  let(:ty) { Stupidedi::Versions::FiftyTen::ElementTypes }
-  let(:r)  { ty::R .new("R" , "Float",          1, 1) }
-  let(:n0) { ty::N0.new("N0", "Whole Number",   1, 1) }
-  let(:n1) { ty::N1.new("N1", "Tenths Place",   1, 1) }
-  let(:n2) { ty::N2.new("N2", "Money",          1, 1) }
-  let(:n3) { ty::N3.new("N3", "N.nnn",          1, 1) }
-  let(:n4) { ty::N4.new("N4", "N.nnnn",         1, 1) }
-  let(:n5) { ty::N5.new("N5", "N.nnnnn",        1, 1) }
-  let(:n6) { ty::N6.new("N6", "N.nnnnnn",       1, 1) }
-  let(:n7) { ty::N7.new("N7", "N.nnnnnnn",      1, 1) }
-  let(:n8) { ty::N8.new("N8", "N.nnnnnnnnn",    1, 1) }
-  let(:n9) { ty::N9.new("N9", "N.nnnnnnnnnn",   1, 1) }
-  let(:id) { ty::ID.new("ID", "Qualifier",      1, 1) }
-  let(:an) { ty::AN.new("AN", "Free Text",      1, 1) }
-  let(:dt) { ty::DT.new("DT", "Date",           8, 8) }
-  let(:tm) { ty::TM.new("TM", "Time",           4, 6) }
+  let(:ty) { Stupidedi::Versions::Common::ElementTypes }
+  let(:id) { ty::ID.new("ID", "Qualifier", 1, 1) }
 
-  let(:rq) { Stupidedi::Versions::FiftyTen::ElementReqs }
+  let(:rq) { Stupidedi::Versions::Common::ElementReqs }
   let(:s)  { Stupidedi::Schema }
 
   let(:separators) do
