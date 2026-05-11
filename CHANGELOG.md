@@ -24,18 +24,24 @@ v Unreleased
     `git worktree add ../conformance pre-x12-removal` to drive a private
     conformance suite against the engine while keeping X12 IP out of
     the published gem.
+  * `Validation::Ambiguity.build` now requires an `InterchangeDef` as
+    a third positional argument — pass your synthetic envelope (see
+    `spec/support/synthetic/interchange_def.rb`). The previous
+    nil-default would crash inside `mkconfig` when the validator
+    actually ran.
 
   **Helpful failure surface**
 
   * Add `Stupidedi::Exceptions::MissingGrammarError` (subclass of
-    `StupidediError`). Const lookups against the removed per-era
-    namespaces — e.g. `Stupidedi::Versions::FiftyTen`,
-    `Stupidedi::TransactionSets::FortyTen`,
-    `Stupidedi::Interchanges::FiveOhOne`, plus the long-deprecated
-    `Versions::FunctionalGroups` / `Versions::Interchanges` aliases —
-    raise it with a message that names the requested constant and
-    points users at the authoring reference. Legitimate typos still
-    surface as `NameError`.
+    `StupidediError`). Const lookups against the removed namespaces —
+    `Stupidedi::Editor`, `Stupidedi::Contrib`, `Stupidedi::Guides`,
+    the per-era `Stupidedi::Versions::FiftyTen` /
+    `Stupidedi::TransactionSets::FortyTen` /
+    `Stupidedi::Interchanges::FiveOhOne` style references, plus the
+    long-deprecated `Versions::FunctionalGroups` /
+    `Versions::Interchanges` aliases — raise it with a message that
+    names the requested constant and points users at the authoring
+    reference. Legitimate typos still surface as `NameError`.
   * Parser-driven lookups against an empty config now push a
     `FailureState` whose reason is the same helpful message instead of
     the generic "unknown … version" string. Applies to all three
@@ -56,6 +62,13 @@ v Unreleased
   * `Config.default` / `Config.hipaa` / `Config.contrib` factory bodies
     — the methods are preserved as documented no-ops returning a fresh
     empty `Config`, for source compatibility.
+  * `Stupidedi::Config::EditorConfig` and the `Config#editor` reader —
+    the editor registry only had callers inside the now-deleted
+    `lib/stupidedi/editor/` tree.
+  * Top-level `notes/` scratch directory — historical maintainer
+    examples (X12 generator, recovery script, JSON writer demo) that
+    all referenced the deleted X12 grammar tree. Still recoverable
+    from the `pre-x12-removal` tag.
 
   **Added**
 

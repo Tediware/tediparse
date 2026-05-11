@@ -25,6 +25,7 @@ describe Stupidedi::Exceptions::MissingGrammarError do
 
   describe "const_missing hooks" do
     {
+      Stupidedi                  => %i[Editor Contrib Guides],
       Stupidedi::Interchanges    => %i[TwoHundred ThreeHundred FourHundred FourOhOne FiveOhOne],
       Stupidedi::Versions        => %i[TwoThousandOne ThirtyTen ThirtyForty ThirtyFifty FortyTen FiftyTen FunctionalGroups Interchanges],
       Stupidedi::TransactionSets => %i[TwoThousandOne ThirtyTen ThirtyForty ThirtyFifty FortyTen FiftyTen],

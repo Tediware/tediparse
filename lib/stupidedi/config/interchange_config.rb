@@ -46,8 +46,7 @@ module Stupidedi
       # @example
       #   table = InterchangeConfig.new
       #
-      #   table.register("00501") { MyApp::Envelopes::FiveOhOne }
-      #   table.register("00401") { MyApp::Envelopes::FourOhOne }
+      #   table.register("DEMO01") { MyApp::Envelopes::Demo }
       #
       # @return [void]
       def register(version, definition = nil, &constructor)

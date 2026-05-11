@@ -4,9 +4,11 @@ require_relative "segment_defs"
 #
 # Synthetic InterchangeDef, registered under version "DEMO01".
 #
-# Modelled on lib/stupidedi/interchanges/00501/interchange_def.rb. The methods
-# `empty`, `segment_dict`, `separators`, and `replace_separators` are required
-# by the parser state machine and are not part of the abstract base class.
+# Modelled on lib/stupidedi/interchanges/00501/interchange_def.rb in the
+# pre-x12-removal git tag (the upstream X12 content tree, removed from this
+# branch). The methods `empty`, `segment_dict`, `separators`, and
+# `replace_separators` are required by the parser state machine and are not
+# part of the abstract base class.
 #
 module Synthetic
   s = Stupidedi::Schema
