@@ -45,11 +45,14 @@ module Stupidedi
         version = segment_tok.element_toks.at(11).try(:value)
 
         unless config.interchange.defined_at?(version)
-          return FailureState.push(
-            zipper,
-            parent,
-            segment_tok,
-            "unknown interchange version #{version.inspect}")
+          reason =
+            if config.interchange.empty?
+              Stupidedi::Exceptions::MissingGrammarError::DEFAULT_MESSAGE
+            else
+              "unknown interchange version #{version.inspect}"
+            end
+
+          return FailureState.push(zipper, parent, segment_tok, reason)
         end
 
         # Construct a SegmentVal and InterchangeVal around it

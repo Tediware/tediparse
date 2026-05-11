@@ -59,11 +59,14 @@ module Stupidedi
         gs01 = segment_tok.element_toks.at(0).try(:value)
 
         unless config.functional_group.defined_at?(gs08_version)
-          return FailureState.push(
-            zipper,
-            parent,
-            segment_tok,
-            "unknown functional group version #{gs08_version.inspect}")
+          reason =
+            if config.functional_group.empty?
+              Stupidedi::Exceptions::MissingGrammarError::DEFAULT_MESSAGE
+            else
+              "unknown functional group version #{gs08_version.inspect}"
+            end
+
+          return FailureState.push(zipper, parent, segment_tok, reason)
         end
 
         envelope_def = config.functional_group.at(gs08_version)
