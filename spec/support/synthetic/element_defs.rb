@@ -40,8 +40,15 @@ module Synthetic
     SY_REP_SEP = c::Separator.new(:SY_REP_SEP, "Repetition Separator", 1, 1)
     SY_COMP_SEP = c::Separator.new(:SY_COMP_SEP, "Component Separator", 1, 1)
 
-    SY_VERSION = t::ID.new(:SY_VERSION, "Interchange / Group Version", 5, 6,
+    # ISA12 (Interchange Control Version Number) is a tightly-codelisted
+    # 5-character ID — X12 uses it for envelope routing.
+    SY_ISA_VERSION = t::ID.new(:SY_ISA_VERSION, "Interchange Control Version Number", 5, 6,
       s::CodeList.build("DEMO01" => "Synthetic demo grammar"))
+
+    # GS08 (Version / Release / Identifier Code) is AN 1-12 in X12 — it can
+    # carry a base version plus an industry-code suffix (e.g. "DEMO01X999").
+    # AN with no code list mirrors the X12 5010 E480 shape.
+    SY_GS_VERSION  = t::AN.new(:SY_GS_VERSION, "Version / Release / Identifier Code", 1, 12)
 
     # 9/9 control number (used by ISA13 / IEA02 — must round-trip with leading zeros)
     SY_ISA_CTRL = t::Nn.new(:SY_ISA_CTRL, "ISA/IEA Control Number", 9, 9, 0)
@@ -55,7 +62,9 @@ module Synthetic
     SY_GS_SENDER   = t::AN.new(:SY_GS_SENDER,   "Sender Code",   2, 15)
     SY_GS_RECEIVER = t::AN.new(:SY_GS_RECEIVER, "Receiver Code", 2, 15)
     SY_GS_FNCID    = t::ID.new(:SY_GS_FNCID, "Functional Identifier", 2, 2,
-      s::CodeList.build("ZZ" => "Mutually defined"))
+      s::CodeList.build(
+        "ZZ" => "Mutually defined",
+        "FA" => "Functional Acknowledgment (synthetic test value)"))
     SY_GS_AGENCY   = t::ID.new(:SY_GS_AGENCY, "Responsible Agency", 1, 2,
       s::CodeList.build("X" => "ASC X12"))
     SY_GS_COUNT    = t::Nn.new(:SY_GS_COUNT, "Number of Transaction Sets", 1, 6, 0)

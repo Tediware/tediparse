@@ -1,17 +1,16 @@
 describe Stupidedi::TransactionSets::Builder::Dsl do
 
   context 'with the most basic build' do
-    SegmentReqs = Stupidedi::TransactionSets::FiftyTen::Implementations::SegmentReqs
+    SegmentReqs = Stupidedi::TransactionSets::Common::Implementations::SegmentReqs
     let(:definition) do
-      e  = Stupidedi::TransactionSets::FiftyTen::Implementations::ElementReqs
-      st = Stupidedi::TransactionSets::FiftyTen::SegmentDefs::ST
+      e  = Stupidedi::TransactionSets::Common::Implementations::ElementReqs
+      st = Synthetic::SegmentDefs::ST
       rep = Stupidedi::Schema::RepeatCount
       described_class.build("HH", "100", "Test Fake Document") do
         table_header("1 - Header") do
           segment(100, st, "Transaction Set Header", SegmentReqs::Required, rep.bounded(1)) do
             element(e::Required, "Transaction Set Identifier Code", values("100"))
             element(e::Required, "Transaction Set Control Number")
-            element(e::Required, "Version, Release, or Industry Number", values("1000"))
           end
         end
       end

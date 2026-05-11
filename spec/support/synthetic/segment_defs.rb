@@ -33,9 +33,9 @@ module Synthetic
       e::SY_PARTY_ID .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_DATE6    .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_TIME     .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
-      e::SY_REP_SEP  .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
-      e::SY_VERSION  .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
-      e::SY_ISA_CTRL .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
+      e::SY_REP_SEP    .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
+      e::SY_ISA_VERSION.simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
+      e::SY_ISA_CTRL   .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_ACK_REQ  .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_USAGE    .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_COMP_SEP .simple_use(r::Mandatory, s::RepeatCount.bounded(1)))
@@ -59,7 +59,7 @@ module Synthetic
       e::SY_TIME       .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_CTRL_NUM   .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
       e::SY_GS_AGENCY  .simple_use(r::Mandatory, s::RepeatCount.bounded(1)),
-      e::SY_VERSION    .simple_use(r::Mandatory, s::RepeatCount.bounded(1)))
+      e::SY_GS_VERSION .simple_use(r::Mandatory, s::RepeatCount.bounded(1)))
 
     GE = s::SegmentDef.build(:GE, "Functional Group Trailer", "",
       e::SY_GS_COUNT.simple_use(r::Mandatory, s::RepeatCount.bounded(1)),

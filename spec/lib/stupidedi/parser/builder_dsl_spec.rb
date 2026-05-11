@@ -15,15 +15,15 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
 
   def start_transaction_set(details, strict)
     b = Stupidedi::Parser::BuilderDsl.build(config(details), strict)
-    b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-    b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
+    b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+    b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
     b. ST("999", stack.st)
   end
 
-  def config(details, version = "005010")
-    Stupidedi::Config.default.customize do |x|
-      x.functional_group.register("005010",
-        Definitions::FunctionalGroupDelegator.new(x.functional_group.at("005010")))
+  def config(details, version = "DEMO01")
+    Synthetic.config.customize do |x|
+      x.functional_group.register("DEMO01",
+        Definitions::FunctionalGroupDelegator.new(x.functional_group.at("DEMO01")))
 
       x.transaction_set.register(version, "FA", "999") do
         Stupidedi::Schema::TransactionSetDef.build("FA", "999", "Example",
@@ -47,7 +47,7 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
     context "with registered version (ISA12)" do
       it "is a-ok" do
         b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-        b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
+        b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
 
         expect(b.machine.first.fetch.zipper.tap do |z|
           expect(z.node).to be_segment
@@ -60,9 +60,9 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
       context "at the end of an interchange" do
         it "is a-ok" do
           b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
           b.IEA(stack.count, stack.pop_isa)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
 
           expect(b.machine.first.fetch.zipper.tap do |z|
             expect(z.node).to be_segment
@@ -80,8 +80,8 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
         it "raises an exception" do
           expect do
             b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", 1, "0", "T", ":")
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", 2, "0", "T", ":")
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", 1, "0", "T", ":")
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", 2, "0", "T", ":")
           end.to raise_error(/segment IEA .+? missing/)
         end
       end
@@ -93,7 +93,7 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
       it "raises an exception" do
         expect do
           b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
           b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "000010")
         end.to raise_error(/version "000010"/)
       end
@@ -102,8 +102,8 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
     context "with registered version (GS08)" do
       it "constructions a functional group" do
         b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-        b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-        b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
+        b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+        b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
 
         expect(b.machine.first.fetch.find(:GS).fetch.zipper.tap do |z|
           expect(z.node).to be_segment
@@ -121,10 +121,10 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
       context "at the end of a functional group" do
         it "is a-ok" do
           b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
           b. GE(stack.count, stack.pop_gs)
-          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
+          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
 
           expect(b.machine.first.fetch.sequence(:GS, :GS).fetch.zipper.tap do |z|
             expect(z.node).to be_segment
@@ -145,9 +145,9 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
         it "raises an exception" do
           expect do
             b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, 1, b.default, "005010")
-            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, 2, b.default, "005010")
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, 1, b.default, "DEMO01")
+            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, 2, b.default, "DEMO01")
           end.to raise_error(/segment GE .+? missing/)
         end
       end
@@ -160,18 +160,18 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
         it "raises an exception" do
           expect do
             b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
             b. ST("000", stack.st)
-          end.to raise_error(/unknown transaction set "005010" "FA" "000"/)
+          end.to raise_error(/unknown transaction set "DEMO01" "FA" "000"/)
         end
       end
 
       context "when registered" do
         it "constructions a transaction set" do
           b = Stupidedi::Parser::BuilderDsl.build(config([]), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
           b. ST("999", stack.st)
 
           expect(b.machine.first.fetch.sequence(:GS, :ST).fetch.zipper.tap do |z|
@@ -194,19 +194,19 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
       context "when unregistered" do
         it "raises an exception" do
           expect do
-            b = Stupidedi::Parser::BuilderDsl.build(config([], "005010X999"), true)
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010X000")
+            b = Stupidedi::Parser::BuilderDsl.build(config([], "DEMO01X999"), true)
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01X000")
             b. ST("000", stack.st)
-          end.to raise_error(/unknown transaction set "005010X000" "FA" "000"/)
+          end.to raise_error(/unknown transaction set "DEMO01X000" "FA" "000"/)
         end
       end
 
       context "when registered" do
         it "constructions a transaction set" do
-          b = Stupidedi::Parser::BuilderDsl.build(config([], "005010X999"), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010X999")
+          b = Stupidedi::Parser::BuilderDsl.build(config([], "DEMO01X999"), true)
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01X999")
           b. ST("999", stack.st)
 
           expect(b.machine.first.fetch.sequence(:GS, :ST).fetch.zipper.tap do |z|
@@ -229,20 +229,20 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
       context "when unregistered" do
         it "raises an exception" do
           expect do
-            b = Stupidedi::Parser::BuilderDsl.build(config([], "005010X999"), true)
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
-            b. ST("999", stack.st, "005010X000")
-          end.to raise_error(/unknown transaction set "005010X000" "FA" "999"/)
+            b = Stupidedi::Parser::BuilderDsl.build(config([], "DEMO01X999"), true)
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
+            b. ST("999", stack.st, "DEMO01X000")
+          end.to raise_error(/unknown transaction set "DEMO01X000" "FA" "999"/)
         end
       end
 
       context "when registered" do
         it "constructions a transaction set" do
-          b = Stupidedi::Parser::BuilderDsl.build(config([], "005010X999"), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010")
-          b. ST("999", stack.st, "005010X999")
+          b = Stupidedi::Parser::BuilderDsl.build(config([], "DEMO01X999"), true)
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01")
+          b. ST("999", stack.st, "DEMO01X999")
 
           expect(b.machine.first.fetch.sequence(:GS, :ST).fetch.zipper.tap do |z|
             expect(z.node).to be_segment
@@ -264,20 +264,20 @@ describe Stupidedi::Parser::BuilderDsl, "strict validation" do
       context "when unregistered" do
         it "ST03 takes precedence over GS08" do
           expect do
-            b = Stupidedi::Parser::BuilderDsl.build(config([], "005010X999"), true)
-            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010X999")
-            b. ST("999", stack.st, "005010X000")
-          end.to raise_error(/unknown transaction set "005010X000" "FA" "999"/)
+            b = Stupidedi::Parser::BuilderDsl.build(config([], "DEMO01X999"), true)
+            b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+            b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01X999")
+            b. ST("999", stack.st, "DEMO01X000")
+          end.to raise_error(/unknown transaction set "DEMO01X000" "FA" "999"/)
         end
       end
 
       context "when registered" do
         it "ST03 takes precedence over GS08" do
-          b = Stupidedi::Parser::BuilderDsl.build(config([], "005010X999"), true)
-          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "00501", stack.isa, "0", "T", ":")
-          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "005010X000")
-          b. ST("999", stack.st, "005010X999")
+          b = Stupidedi::Parser::BuilderDsl.build(config([], "DEMO01X999"), true)
+          b.ISA("00", "", "00", "", "ZZ", "SUBMITTER ID", "ZZ", "RECEIVER ID", Time.now, Time.now, "^", "DEMO01", stack.isa, "0", "T", ":")
+          b. GS("FA", "SENDER ID", "RECEIVER ID", Time.now, Time.now, stack.gs, b.default, "DEMO01X000")
+          b. ST("999", stack.st, "DEMO01X999")
 
           expect(b.machine.first.fetch.sequence(:GS, :ST).fetch.zipper.tap do |z|
             expect(z.node).to be_segment
