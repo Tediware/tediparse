@@ -4,12 +4,18 @@ describe Stupidedi::Exceptions::MissingGrammarError do
 
     it { is_expected.to be_a(String).and(satisfy { |s| s.include?("tediparse") }) }
     it { is_expected.to satisfy { |s| s.include?("Stupidedi::Config") } }
-    it { is_expected.to satisfy { |s| s.include?("synthetic") } }
+    it { is_expected.to satisfy { |s| s.include?("README") } }
   end
 
-  describe "default constructor" do
-    it "uses DEFAULT_MESSAGE" do
+  describe "constructors" do
+    it "uses DEFAULT_MESSAGE when no context is given" do
       expect(described_class.new.message).to eq(described_class::DEFAULT_MESSAGE)
+    end
+
+    it "appends the resolution context when one is given" do
+      err = described_class.new("Stupidedi::Versions::FiftyTen")
+      expect(err.message).to include(described_class::DEFAULT_MESSAGE)
+      expect(err.message).to include("(while resolving Stupidedi::Versions::FiftyTen)")
     end
 
     it "is a StupidediError so existing rescue StupidediError clauses catch it" do
@@ -25,8 +31,9 @@ describe Stupidedi::Exceptions::MissingGrammarError do
     }.each do |namespace, removed|
       context "on #{namespace}" do
         removed.each do |name|
-          it "raises MissingGrammarError when #{name} is referenced" do
-            expect { namespace.const_get(name) }.to raise_error(described_class)
+          it "raises MissingGrammarError naming #{name} when referenced" do
+            expect { namespace.const_get(name) }
+              .to raise_error(described_class, /#{namespace}::#{name}/)
           end
         end
 
@@ -36,6 +43,21 @@ describe Stupidedi::Exceptions::MissingGrammarError do
           # code still produce the standard error.
           expect { namespace.const_get(:NotARealRemovedEra) }.to raise_error(NameError)
         end
+      end
+    end
+  end
+
+  describe "Config factories return empty configs" do
+    # Config.default / hipaa / contrib are preserved for source compatibility
+    # with upstream stupidedi, but they no longer register any grammars — see
+    # lib/stupidedi/config.rb. Parser-driven lookups against the returned
+    # config must hit the empty-registry branch and surface DEFAULT_MESSAGE.
+    %i[default hipaa contrib].each do |factory|
+      it "Config.#{factory} returns an empty Config" do
+        cfg = Stupidedi::Config.send(factory)
+        expect(cfg.interchange).to be_empty
+        expect(cfg.functional_group).to be_empty
+        expect(cfg.transaction_set).to be_empty
       end
     end
   end

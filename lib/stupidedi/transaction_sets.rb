@@ -16,7 +16,7 @@ module Stupidedi
 
     def self.const_missing(name)
       if REMOVED_ERAS.include?(name.to_sym)
-        raise Stupidedi::Exceptions::MissingGrammarError
+        raise Stupidedi::Exceptions::MissingGrammarError.new("#{self}::#{name}")
       end
 
       super

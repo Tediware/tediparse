@@ -332,10 +332,10 @@ module Stupidedi
 
       class << Ambiguity
         # @param interchange_def
-        #   Optional. Defaults to the bundled 00501 interchange. Pass an explicit
-        #   InterchangeDef when validating a transaction set against a different
-        #   envelope era (or a synthetic envelope used in tests).
-        def build(transaction_set_def, functional_group_def, interchange_def = nil)
+        #   Required. tediparse does not bundle envelope grammars, so callers
+        #   must pass an explicit InterchangeDef — typically the synthetic one
+        #   used to drive the rest of their test harness.
+        def build(transaction_set_def, functional_group_def, interchange_def)
           # Use dummy identifiers to link transaction_set_def to the parser
           config  = mkconfig(transaction_set_def, functional_group_def,
                              "ISA11", "GS01", "GS08", "ST01", interchange_def)
@@ -372,9 +372,7 @@ module Stupidedi
           new(builder.machine, builder.reader, isa_elements, gs_elements, st_elements)
         end
 
-        def mkconfig(definition, functional_group_def, isa11, gs01, gs08, st01, interchange_def = nil)
-          interchange_def ||= Interchanges::FiveOhOne::InterchangeDef
-
+        def mkconfig(definition, functional_group_def, isa11, gs01, gs08, st01, interchange_def)
           Config.new.customize do |c|
             c.interchange.customize do |x|
               # We can use whatever interchange version we like, it does not

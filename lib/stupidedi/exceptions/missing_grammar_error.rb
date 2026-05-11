@@ -28,11 +28,22 @@ module Stupidedi
       DEFAULT_MESSAGE =
         "tediparse does not ship with X12 grammars or transaction-set " \
         "definitions. Register your own grammar against Stupidedi::Config " \
-        "before parsing — see the README and spec/support/synthetic/demo.rb " \
-        "for an authoring example."
+        "before parsing — see the README for an authoring example."
 
-      def initialize(message = DEFAULT_MESSAGE)
-        super
+      # @param context [String, nil]
+      #   When given, appended to the default message as " (while resolving
+      #   <context>)". Used by the +const_missing+ hooks to name the
+      #   per-era constant the caller reached for; left nil at parser-state
+      #   callsites where no constant name is in play.
+      def initialize(context = nil)
+        message =
+          if context
+            "#{DEFAULT_MESSAGE} (while resolving #{context})"
+          else
+            DEFAULT_MESSAGE
+          end
+
+        super(message)
       end
     end
   end

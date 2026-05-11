@@ -13,11 +13,8 @@ Gem::Specification.new do |s|
   s.license = "BSD-3-Clause"
 
   s.files             = ["README.md", "Rakefile",
-                         "bin/*",
                          "lib/**/*",
                          "doc/**/*.md"].map {|glob| Dir[glob] }.flatten
-  s.bindir            = "bin"
-  s.executables       = ["edi-pp", "edi-ed"]
   s.require_path      = "lib"
 
   s.add_dependency "term-ansicolor", "~> 1.3"
