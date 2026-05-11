@@ -22,13 +22,17 @@ module Synthetic
       s::ST.use(100, q::Mandatory, d::RepeatCount.bounded(1))),
 
     d::TableDef.detail("Detail",
-      # Two sibling loops whose openers permit the SAME SD_KIND code "P":
+      # Two sibling loops whose openers sit at the SAME position (200) AND
+      # share the SD_KIND code "P". When an `LO*P*…` segment arrives, the
+      # parser cannot deterministically choose between them — the
+      # ValueBased ConstraintTable path runs and Ambiguity#audit must flag
+      # this as a schema error.
       d::LoopDef.build("LO-AMBIG-A", d::RepeatCount.bounded(1),
         b::Segment(200, s::LO, "Ambig Opener A", q::Mandatory, d::RepeatCount.bounded(1),
           b::Element(r::Mandatory, "Kind", b::Values("P", "S")),
           b::Element(r::Optional,  "Description"))),
       d::LoopDef.build("LO-AMBIG-B", d::RepeatCount.bounded(1),
-        b::Segment(300, s::LO, "Ambig Opener B", q::Mandatory, d::RepeatCount.bounded(1),
+        b::Segment(200, s::LO, "Ambig Opener B", q::Mandatory, d::RepeatCount.bounded(1),
           b::Element(r::Mandatory, "Kind", b::Values("P", "O")),
           b::Element(r::Optional,  "Description")))),
 

@@ -45,7 +45,7 @@ module Synthetic
 
     # 9/9 control number (used by ISA13 / IEA02 — must round-trip with leading zeros)
     SY_ISA_CTRL = t::Nn.new(:SY_ISA_CTRL, "ISA/IEA Control Number", 9, 9, 0)
-    # Variable-width control number (used by GS06 / GE02 / TA1, and by ST02 not at all — ST02 is SY_ST_CTRL)
+    # Variable-width control number, used by GS06 / GE02 / TA1. (ST02 uses SY_ST_CTRL instead.)
     SY_CTRL_NUM = t::Nn.new(:SY_CTRL_NUM, "Control Number", 1, 9, 0)
     SY_ACK_REQ  = t::ID.new(:SY_ACK_REQ,  "Acknowledgement Requested", 1, 1,
       s::CodeList.build("0" => "No", "1" => "Yes"))

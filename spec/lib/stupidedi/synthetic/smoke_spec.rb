@@ -125,8 +125,10 @@ describe "Synthetic Demo grammar smoke tests" do
         root       = machine.zipper.fetch.root
         rewritten  = Stupidedi::Writer::Default.new(root, separators).write
 
-        # Tolerate a trailing newline on the fixture file
-        expect(rewritten.strip).to eq(original.strip)
+        # Tolerate only a trailing newline on the fixture file — using
+        # `chomp` rather than `strip` so leading whitespace or a missing
+        # final segment terminator would still flag a regression.
+        expect(rewritten.chomp).to eq(original.chomp)
       end
     end
   end
