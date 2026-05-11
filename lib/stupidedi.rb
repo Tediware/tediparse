@@ -27,12 +27,9 @@ require "ruby/try"
 module Stupidedi
   # @todo deprecated
   autoload :Builder,          "stupidedi/builder"
-  autoload :Contrib,          "stupidedi/contrib"
-  autoload :Guides,           "stupidedi/guides"
 
   autoload :Color,            "stupidedi/color"
   autoload :Config,           "stupidedi/config"
-  autoload :Editor,           "stupidedi/editor"
   autoload :Either,           "stupidedi/either"
   autoload :Exceptions,       "stupidedi/exceptions"
   autoload :Inspect,          "stupidedi/inspect"
@@ -46,8 +43,23 @@ module Stupidedi
   autoload :Versions,         "stupidedi/versions"
   autoload :Writer,           "stupidedi/writer"
   autoload :Zipper,           "stupidedi/zipper"
-  autoload :Versions,         "stupidedi/versions"
   autoload :VERSION,          "stupidedi/version"
+
+  # Top-level namespaces that lived under +Stupidedi+ in the upstream
+  # stupidedi gem (the ack/editor subsystem, the +Contrib+ extras, and
+  # the +Guides+ implementation-guide tree). tediparse does not ship
+  # them; reach for one by name and we surface a helpful error rather
+  # than +NameError+.
+  REMOVED_TOP_LEVEL = %i[Editor Contrib Guides].freeze
+  private_constant :REMOVED_TOP_LEVEL
+
+  def self.const_missing(name)
+    if REMOVED_TOP_LEVEL.include?(name.to_sym)
+      raise Stupidedi::Exceptions::MissingGrammarError.new("#{self}::#{name}")
+    end
+
+    super
+  end
 
   def self.caller(depth = 2)
     if k = ::Kernel.caller.at(depth - 1)

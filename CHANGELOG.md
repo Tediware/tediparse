@@ -1,6 +1,83 @@
 v Unreleased
 
-  **Bug fixes**
+  Tediparse is now a maintained fork of `stupidedi` (Kyle Putnam, upstream
+  maintained by Isi Robayna). The internal `Stupidedi` module name is
+  preserved for source compatibility — `require "tediparse"` and `require
+  "stupidedi"` both work.
+
+  **Breaking: X12 grammar content removed**
+
+  Tediparse ships the engine, not the grammars. Roughly 856 files of X12
+  IP have been removed from `lib/`: every per-era version namespace
+  (`Versions::TwoThousandOne` through `FiftyTen`), every transaction-set
+  definition (standards and HIPAA implementations under
+  `transaction_sets/<version>/`), every interchange envelope
+  (`interchanges/{00200,00300,00400,00401,00501}/`), and the
+  `editor/` / `contrib/` / `guides/` trees.
+
+  Before relying on tediparse you must register your own grammar against
+  `Stupidedi::Config`. See `spec/support/synthetic/` in the source tree
+  for a worked authoring example.
+
+  * **Recovering the upstream corpus.** The full content tree and the
+    ~146 `.edi` fixtures live at the `pre-x12-removal` git tag. Use
+    `git worktree add ../conformance pre-x12-removal` to drive a private
+    conformance suite against the engine while keeping X12 IP out of
+    the published gem.
+  * `Validation::Ambiguity.build` now requires an `InterchangeDef` as
+    a third positional argument — pass your synthetic envelope (see
+    `spec/support/synthetic/interchange_def.rb`). The previous
+    nil-default would crash inside `mkconfig` when the validator
+    actually ran.
+
+  **Helpful failure surface**
+
+  * Add `Stupidedi::Exceptions::MissingGrammarError` (subclass of
+    `StupidediError`). Const lookups against the removed namespaces —
+    `Stupidedi::Editor`, `Stupidedi::Contrib`, `Stupidedi::Guides`,
+    the per-era `Stupidedi::Versions::FiftyTen` /
+    `Stupidedi::TransactionSets::FortyTen` /
+    `Stupidedi::Interchanges::FiveOhOne` style references, plus the
+    long-deprecated `Versions::FunctionalGroups` /
+    `Versions::Interchanges` aliases — raise it with a message that
+    names the requested constant and points users at the authoring
+    reference. Legitimate typos still surface as `NameError`.
+  * Parser-driven lookups against an empty config now push a
+    `FailureState` whose reason is the same helpful message instead of
+    the generic "unknown … version" string. Applies to all three
+    parser states (`InterchangeState`, `FunctionalGroupState`,
+    `TransactionSetState`).
+  * `Config::InterchangeConfig`, `FunctionalGroupConfig`, and
+    `TransactionSetConfig` gain an `empty?` predicate.
+
+  **Removed**
+
+  * `bin/edi-pp`, `bin/edi-ed`, `bin/edi-obfuscate` — the gem no longer
+    ships executables.
+  * `lib/stupidedi/editor/` and `editor.rb` (the entire TA1 / 999 /
+    277CA acknowledgement subsystem).
+  * `lib/stupidedi/contrib/`, `contrib.rb`, `guides.rb`.
+  * Per-era autoloads from `lib/stupidedi.rb`, `interchanges.rb`,
+    `versions.rb`, `transaction_sets.rb`.
+  * `Config.default` / `Config.hipaa` / `Config.contrib` factory bodies
+    — the methods are preserved as documented no-ops returning a fresh
+    empty `Config`, for source compatibility.
+  * `Stupidedi::Config::EditorConfig` and the `Config#editor` reader —
+    the editor registry only had callers inside the now-deleted
+    `lib/stupidedi/editor/` tree.
+  * Top-level `notes/` scratch directory — historical maintainer
+    examples (X12 generator, recovery script, JSON writer demo) that
+    all referenced the deleted X12 grammar tree. Still recoverable
+    from the `pre-x12-removal` tag.
+
+  **Added**
+
+  * `spec/support/synthetic/` — a small non-X12 grammar harness
+    (interchange + functional group + transaction set + adversarial
+    variants) used to exercise the engine in tests. Doubles as the
+    canonical grammar-authoring reference.
+
+  **Bug fixes** (carried over from prior fork work)
 
   * Fix `too much non-determinism` error when a `LoopDef` contains repeated
     structurally-identical `SegmentUse` slots (same id, no qualifier element)
@@ -14,6 +91,8 @@ v Unreleased
     paths (e.g. N1 by N101) and for genuinely ambiguous cases across different
     parent loops. During `find` navigation the `mode == :insert` gate skips
     disambiguation entirely, so the full candidate set is preserved.
+  * Build out 5010 SO317 as a test case for interleaved segments and child
+    loops within a single `LoopDef`.
 
 v 1.4.1
 

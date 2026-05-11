@@ -44,6 +44,10 @@ module Stupidedi
         @table.defined_at?([gs08, gs01, st01])
       end
 
+      def empty?
+        @table.empty?
+      end
+
       # @return [void]
       # :nocov:
       def pretty_print(q)

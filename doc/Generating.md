@@ -1,45 +1,50 @@
 Generating X12
 ==============
 
-Stupidedi has a simple interface for generating X12 documents. Once you have
-defined a transaction set or implementation guide (see [Defining](unwritten/Defining.md)) ,
+Tediparse has a simple interface for generating X12 documents. Once you have
+defined a transaction set or implementation guide (see [Defining](Defining.md)),
 you can generate well-formed documents using [`BuilderDsl`][1].
 
-  [1]: Stupidedi/Builder/BuilderDsl.html
+  [1]: Stupidedi/Parser/BuilderDsl.html
+
+Tediparse ships the engine only — you supply the grammar definitions.
+`spec/support/synthetic/` in the source tree is a worked authoring example;
+the snippets below use `MyApp::*` placeholders for the application-provided
+constants.
 
 Configuration
 -------------
 
-Minimal configuration is needed so Stupidedi can load the correct definitions
-and ensure well-formedness. The configuration below links interchange version
-00501 to an instance of [`InterchangeDef`][2], the functional group version
-005010 to an instance of [`FunctionalGroupDef`][3] and links the transaction set
-(identified by three elements) to an instance of [`TransactionSetDef`][4].
+Minimal configuration is needed so the parser can load the correct definitions
+and ensure well-formedness. The configuration below links an interchange
+version code to an instance of [`InterchangeDef`][2], a functional group
+version code to an instance of [`FunctionalGroupDef`][3], and links a
+transaction set (identified by three elements) to an instance of
+[`TransactionSetDef`][4].
 
-  [2]: Stupidedi/Envelope/InterchangeDef.html
-  [3]: Stupidedi/Envelope/FunctionalGroupDef.html
-  [4]: Stupidedi/Envelope/TransactionSetDef.html
+  [2]: Stupidedi/Schema/InterchangeDef.html
+  [3]: Stupidedi/Schema/FunctionalGroupDef.html
+  [4]: Stupidedi/Schema/TransactionSetDef.html
 
     config = Stupidedi::Config.new
 
-    # Link the "00501" value in ISA12 element to the 5010 interchange definition
+    # Link the ISA12 interchange version code to your interchange definition
     config.interchange.register("00501") do
-      Stupidedi::Versions::Interchanges::FiveOhOne::InterchangeDef
+      MyApp::Envelopes::FiveOhOne
     end
 
-    # Link the "005010" value in GS08 to the 5010 functional group definition
+    # Link the GS08 functional-group version code to your functional group def
     config.functional_group.register("005010") do
-      Stupidedi::Versions::FunctionalGroups::FiftyTen::FunctionalGroupDef
+      MyApp::FunctionalGroups::FiftyTen
     end
 
-    # Link "005010X222" in GS08 or ST03, "HC" in GS01, and "837"
-    # in ST01 to the implementation guide definition
+    # Link (GS08, GS01, ST01) to your transaction-set definition
     config.transaction_set.register("005010X222", "HC", "837") do
-      Stupidedi::Guides::FiftyTen::X222::HC837P
+      MyApp::TransactionSets::X222A1_HC837
     end
 
     # Instantiate a new BuilderDsl
-    b = Stupidedi::Builder::BuilderDsl.build(config)
+    b = Stupidedi::Parser::BuilderDsl.build(config)
 
 [`InterchangeDef`][2] specifies which segments can occur directly in the
 interchange envelope (e.g. `ISA` and `ISE`), the order in which they can occur,
@@ -83,7 +88,7 @@ should be the elements of the segment.
 Alternatively, the [`#segment!`][5] method can be used to avoid the method
 lookup overhead incurred by `method_missing`.
 
-  [5]: Stupidedi/Builder/BuilderDsl.html#segment!-instance_method
+  [5]: Stupidedi/Parser/BuilderDsl.html#segment!-instance_method
 
 ### Simple Elements
 
@@ -91,12 +96,13 @@ Simple elements of _any_ type can be constructed from Strings (this is how X12
 is parsed from a file), but certain element types can be constructed from other
 types of Ruby values.
 
-The description of each element type below pertains to the `FiftyTen` functional
-group definition. The [`SimpleElementDef`][7] and [`SimpleElementVal`][8] classes
-define the minimal interfaces that are extended by subclasses like `AN` and
-`StringVal`. See the [`FiftyTen::ElementTypes`][6] namespace for more examples.
+The description of each element type below uses the era-agnostic
+`Versions::Common::ElementTypes` vocabulary that tediparse ships. The
+[`SimpleElementDef`][7] and [`SimpleElementVal`][8] classes define the minimal
+interfaces that are extended by subclasses like `AN` and `StringVal`. See the
+[`Versions::Common::ElementTypes`][6] namespace for the primitives.
 
-  [6]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes.html
+  [6]: Stupidedi/Versions/Common/ElementTypes.html
   [7]: Stupidedi/Schema/SimpleElementDef.html
   [8]: Stupidedi/Values/SimpleElementVal.html
 
@@ -105,14 +111,14 @@ define the minimal interfaces that are extended by subclasses like `AN` and
 String elements (declared with type `AN`) can be constructed from any value that
 responds to `#to_s`. The constructed element is a [`StringVal`][9].
 
-  [9]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes/StringVal.html
+  [9]: Stupidedi/Versions/Common/ElementTypes/AN.html
 
 #### Identifiers
 
 Identifier elements (declared with type `ID`) can be constructed from any value
 that responds to `#to_s`. The constructed element is an [`IdentifierVal`][10].
 
-  [10]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes/IdentifierVal.html
+  [10]: Stupidedi/Versions/Common/ElementTypes/ID.html
 
 #### Dates
 
@@ -122,7 +128,7 @@ either six or eight characters, and from any value that responds to `#year`,
 included with the standard Ruby libraries. The constructed element is a
 [`DateVal`][11].
 
-  [11]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes/DateVal.html
+  [11]: Stupidedi/Versions/Common/ElementTypes/DT.html
 
 #### Times
 
@@ -130,7 +136,7 @@ Time elements (declared with type `TM`) can be constructed from a `String` of
 either two, four, six, or more than six characters, and from the `Time` and
 `DateTime` value types. The constructed element is a [`TimeVal`][12].
 
-  [12]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes/TimeVal.html
+  [12]: Stupidedi/Versions/Common/ElementTypes/TM.html
 
 #### Numbers
 
@@ -138,8 +144,8 @@ Numeric and decimal elements (declared with type `Nn` and `R`, respectively) can
 be constructed from any value that responds to `#to_d`. The constructed element
 is a [`FixnumVal`][13] or [`FloatVal`][14].
 
-  [13]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes/FixnumVal.html
-  [14]: Stupidedi/Versions/FunctionalGroups/FiftyTen/ElementTypes/FloatVal.html
+  [13]: Stupidedi/Versions/Common/ElementTypes/Nn.html
+  [14]: Stupidedi/Versions/Common/ElementTypes/R.html
 
 ### Composite Elements
 
@@ -262,9 +268,9 @@ the current state:
      15: Instruction[IEA: Interchange Cont..](pop: 5, drop: 2),
      16: Instruction[ISA](pop: 6, drop: 0, push: InterchangeState))]
 
-  [19]: Stupidedi/Builder/StateMachine.html
-  [20]: Stupidedi/Builder/InstructionTable.html
-  [21]: Stupidedi/Builder/BuilderDsl.html#successors-instance_method
+  [19]: Stupidedi/Parser/StateMachine.html
+  [20]: Stupidedi/Parser/InstructionTable.html
+  [21]: Stupidedi/Parser/BuilderDsl.html#successors-instance_method
 
 The above output pertains to the X222 837 implementation guide. The output shows
 a single active [`InstructionTable`][20] and the segments it is able to accept.
@@ -314,8 +320,8 @@ Generating more than the defined number of elements:
     b.REF(nil, nil, nil, b.composite("A", "B", "C", "D", "E", "F", "G"))
       #=> REF04 has only 6 components (Stupidedi::Exceptions::ParseError)
 
-  [24]: Stupidedi/Builder/BuilderDsl.html#composite-instance_method
-  [25]: Stupidedi/Builder/BuilderDsl.html#repeated-instance_method
-  [26]: Stupidedi/Builder/BuilderDsl.html#blank-instance_method
-  [27]: Stupidedi/Builder/BuilderDsl.html#default-instance_method
-  [28]: Stupidedi/Builder/BuilderDsl.html#not_used-instance_method
+  [24]: Stupidedi/Parser/BuilderDsl.html#composite-instance_method
+  [25]: Stupidedi/Parser/BuilderDsl.html#repeated-instance_method
+  [26]: Stupidedi/Parser/BuilderDsl.html#blank-instance_method
+  [27]: Stupidedi/Parser/BuilderDsl.html#default-instance_method
+  [28]: Stupidedi/Parser/BuilderDsl.html#not_used-instance_method

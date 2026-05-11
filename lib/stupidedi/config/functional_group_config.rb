@@ -24,7 +24,7 @@ module Stupidedi
       # @return [Hash<String, FunctionalGroupDef>]
       attr_reader :table
 
-      def_delegators :@table, :defined_at?
+      def_delegators :@table, :defined_at?, :empty?
 
       def initialize
         @table = Hash.new

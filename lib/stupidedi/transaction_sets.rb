@@ -1,14 +1,25 @@
 module Stupidedi
   module TransactionSets
-    autoload :Builder,        "stupidedi/transaction_sets/builder"
-    autoload :Validation,     "stupidedi/transaction_sets/validation"
+    autoload :Builder,    "stupidedi/transaction_sets/builder"
+    autoload :Validation, "stupidedi/transaction_sets/validation"
+    autoload :Common,     "stupidedi/transaction_sets/common"
 
-    autoload :Common,         "stupidedi/transaction_sets/common"
-    autoload :TwoThousandOne, "stupidedi/transaction_sets/002001"
-    autoload :ThirtyTen,      "stupidedi/transaction_sets/003010"
-    autoload :ThirtyForty,    "stupidedi/transaction_sets/003040"
-    autoload :ThirtyFifty,    "stupidedi/transaction_sets/003050"
-    autoload :FortyTen,       "stupidedi/transaction_sets/004010"
-    autoload :FiftyTen,       "stupidedi/transaction_sets/005010"
+    # Per-era transaction-set namespaces that lived under
+    # +Stupidedi::TransactionSets+ in the upstream stupidedi gem. tediparse
+    # does not ship them; reach for one by name and we surface a helpful
+    # error rather than +NameError+. Deeper guide names (X222A1, etc.) are
+    # nested under these eras, so catching at the era level is sufficient.
+    REMOVED_ERAS = %i[
+      TwoThousandOne ThirtyTen ThirtyForty ThirtyFifty FortyTen FiftyTen
+    ].freeze
+    private_constant :REMOVED_ERAS
+
+    def self.const_missing(name)
+      if REMOVED_ERAS.include?(name.to_sym)
+        raise Stupidedi::Exceptions::MissingGrammarError.new("#{self}::#{name}")
+      end
+
+      super
+    end
   end
 end

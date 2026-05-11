@@ -4,6 +4,7 @@ module Stupidedi
     autoload :StupidediError,         "stupidedi/exceptions/stupidedi_error"
     autoload :InvalidElementError,    "stupidedi/exceptions/invalid_element_error"
     autoload :InvalidSchemaError,     "stupidedi/exceptions/invalid_schema_error"
+    autoload :MissingGrammarError,    "stupidedi/exceptions/missing_grammar_error"
     autoload :OutputError,            "stupidedi/exceptions/output_error"
     autoload :ParseError,             "stupidedi/exceptions/parse_error"
     autoload :TokenizeError,          "stupidedi/exceptions/tokenize_error"

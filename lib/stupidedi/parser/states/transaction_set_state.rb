@@ -70,13 +70,15 @@ module Stupidedi
         # end
 
         unless config.transaction_set.defined_at?(st03, gs01, st01)
-          context = "#{st03.inspect} #{gs01.inspect} #{st01.inspect}"
+          reason =
+            if config.transaction_set.empty?
+              Stupidedi::Exceptions::MissingGrammarError::DEFAULT_MESSAGE
+            else
+              context = "#{st03.inspect} #{gs01.inspect} #{st01.inspect}"
+              "unknown transaction set #{context}"
+            end
 
-          return FailureState.push(
-            zipper,
-            parent,
-            segment_tok,
-            "unknown transaction set #{context}")
+          return FailureState.push(zipper, parent, segment_tok, reason)
         end
 
         envelope_def = config.transaction_set.at(st03, gs01, st01)

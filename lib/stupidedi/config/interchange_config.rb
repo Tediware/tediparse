@@ -32,7 +32,7 @@ module Stupidedi
       # @return [Hash<String, InterchangeDef>]
       attr_reader :table
 
-      def_delegators :@table, :defined_at?
+      def_delegators :@table, :defined_at?, :empty?
 
       def initialize
         @table = Hash.new
@@ -46,10 +46,7 @@ module Stupidedi
       # @example
       #   table = InterchangeConfig.new
       #
-      #   table.register("00602") { SixOhTwo::InterchangeDef }
-      #   table.register("00501") { FiveOhOne::InterchangeDef }
-      #   table.register("00401") { FourOhOne::InterchangeDef }
-      #   table.register("00304") { ThreeOhFour::InterchangeDef }
+      #   table.register("DEMO01") { MyApp::Envelopes::Demo }
       #
       # @return [void]
       def register(version, definition = nil, &constructor)

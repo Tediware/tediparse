@@ -1,10 +1,26 @@
 describe Stupidedi::TransactionSets::Builder::Dsl do
 
   context 'with the most basic build' do
-    SegmentReqs = Stupidedi::TransactionSets::FiftyTen::Implementations::SegmentReqs
+    SegmentReqs = Stupidedi::TransactionSets::Common::Implementations::SegmentReqs
+
+    # Inline 3-element synthetic ST (id + control + version) so the DSL's
+    # `element(..., values("..."))` path is exercised on the third element.
+    # We don't lean on Synthetic::SegmentDefs::ST here because that one
+    # mirrors the basic 2-element X12 wire shape; this spec is unit-testing
+    # the DSL, so the input grammar shape can be whatever stresses the DSL.
+    let(:st_3el) do
+      de = Stupidedi::Versions::Common::ElementReqs
+      rc = Stupidedi::Schema::RepeatCount
+      an = Stupidedi::Versions::Common::ElementTypes::AN
+      Stupidedi::Schema::SegmentDef.build(:ST, "Transaction Set Header", "",
+        an.new(:SY_ST_ID,      "Transaction Set Identifier Code",   3, 3).simple_use(de::Mandatory, rc.bounded(1)),
+        an.new(:SY_ST_CTRL,    "Transaction Set Control Number",    4, 9).simple_use(de::Mandatory, rc.bounded(1)),
+        an.new(:SY_ST_VERSION, "Implementation Convention Reference", 1, 35).simple_use(de::Optional,  rc.bounded(1)))
+    end
+
     let(:definition) do
-      e  = Stupidedi::TransactionSets::FiftyTen::Implementations::ElementReqs
-      st = Stupidedi::TransactionSets::FiftyTen::SegmentDefs::ST
+      e   = Stupidedi::TransactionSets::Common::Implementations::ElementReqs
+      st  = st_3el
       rep = Stupidedi::Schema::RepeatCount
       described_class.build("HH", "100", "Test Fake Document") do
         table_header("1 - Header") do
