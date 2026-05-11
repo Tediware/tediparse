@@ -39,7 +39,7 @@ module Definitions
   def Segment(position, segment, *args)
     case segment
     when Symbol
-      Stupidedi::Versions::FiftyTen::SegmentDefs.const_get(segment).use(position, *args)
+      SegmentDefs.const_get(segment).use(position, *args)
     when Stupidedi::Schema::SegmentDef
       segment.use(position, *args)
     else
@@ -55,7 +55,7 @@ module Definitions
   def Element(element, *args)
     case element
     when Symbol
-      Stupidedi::Versions::FiftyTen::ElementDefs.const_get(id).simple_use(*args)
+      ElementDefs.const_get(element).simple_use(*args)
     when Stupidedi::Schema::AbstractElementDef
       element.simple_use(*args)
     end
@@ -70,7 +70,7 @@ module Definitions
   SegmentReqs   = Stupidedi::Versions::Common::SegmentReqs
   ElementReqs_  = Stupidedi::TransactionSets::Common::Implementations::ElementReqs
   SegmentReqs_  = Stupidedi::TransactionSets::Common::Implementations::SegmentReqs
-  SyntaxNotes   = Stupidedi::Versions::FiftyTen::SyntaxNotes
+  SyntaxNotes   = Stupidedi::Versions::Common::SyntaxNotes
 
   # Use this within `Segment` to declare "if any element specified in the relation
   # is present, then all elements must be present"
@@ -259,6 +259,21 @@ module Definitions
     REP =
       Stupidedi::Schema::SegmentDef.build(:REP, "Example Segment", "",
         ElementDefs::DE_N0.simple_use(ElementReqs::Optional, RepeatCount.bounded(3)))
+
+    # Envelope segments — synthetic definitions kept here so spec helpers can
+    # resolve `Segment(_, :ST, ...)` and `Segment(_, :SE, ...)` without depending
+    # on any per-era X12 grammar. Element shapes are loose (AN) so a wide range
+    # of values from existing specs parses cleanly.
+    ST =
+      Stupidedi::Schema::SegmentDef.build(:ST, "Transaction Set Header", "",
+        Stupidedi::Versions::Common::ElementTypes::AN.new(:E143,  "Transaction Set Identifier Number", 3, 3).simple_use(ElementReqs::Mandatory, RepeatCount.bounded(1)),
+        Stupidedi::Versions::Common::ElementTypes::AN.new(:E329,  "Transaction Set Control Number",    4, 9).simple_use(ElementReqs::Mandatory, RepeatCount.bounded(1)),
+        Stupidedi::Versions::Common::ElementTypes::AN.new(:E1705, "Implementation Convention Reference", 1, 35).simple_use(ElementReqs::Optional,  RepeatCount.bounded(1)))
+
+    SE =
+      Stupidedi::Schema::SegmentDef.build(:SE, "Transaction Set Trailer", "",
+        Stupidedi::Versions::Common::ElementTypes::Nn.new(:E96,  "Number of Included Segments",     1, 10, 0).simple_use(ElementReqs::Mandatory, RepeatCount.bounded(1)),
+        Stupidedi::Versions::Common::ElementTypes::AN.new(:E329, "Transaction Set Control Number",  4,  9).simple_use(ElementReqs::Mandatory, RepeatCount.bounded(1)))
   end
 
   def NNA; SegmentDefs::NNA end

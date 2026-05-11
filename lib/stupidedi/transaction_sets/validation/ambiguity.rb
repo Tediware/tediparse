@@ -331,10 +331,14 @@ module Stupidedi
       end
 
       class << Ambiguity
-        def build(transaction_set_def, functional_group_def)
+        # @param interchange_def
+        #   Optional. Defaults to the bundled 00501 interchange. Pass an explicit
+        #   InterchangeDef when validating a transaction set against a different
+        #   envelope era (or a synthetic envelope used in tests).
+        def build(transaction_set_def, functional_group_def, interchange_def = nil)
           # Use dummy identifiers to link transaction_set_def to the parser
           config  = mkconfig(transaction_set_def, functional_group_def,
-                             "ISA11", "GS01", "GS08", "ST01")
+                             "ISA11", "GS01", "GS08", "ST01", interchange_def)
 
           builder = Parser::BuilderDsl.new(Parser.build(config, Zipper::Stack), false)
 
@@ -368,12 +372,14 @@ module Stupidedi
           new(builder.machine, builder.reader, isa_elements, gs_elements, st_elements)
         end
 
-        def mkconfig(definition, functional_group_def, isa11, gs01, gs08, st01)
+        def mkconfig(definition, functional_group_def, isa11, gs01, gs08, st01, interchange_def = nil)
+          interchange_def ||= Interchanges::FiveOhOne::InterchangeDef
+
           Config.new.customize do |c|
             c.interchange.customize do |x|
               # We can use whatever interchange version we like, it does not
               # have any bearing or relationship to the given `definition`
-              x.register(isa11, Interchanges::FiveOhOne::InterchangeDef)
+              x.register(isa11, interchange_def)
             end
 
             c.functional_group.customize do |x|
