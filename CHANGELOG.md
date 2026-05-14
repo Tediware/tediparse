@@ -49,6 +49,12 @@ v Unreleased
     `TransactionSetState`).
   * `Config::InterchangeConfig`, `FunctionalGroupConfig`, and
     `TransactionSetConfig` gain an `empty?` predicate.
+  * `InterchangeConfig#register`, `FunctionalGroupConfig#register`, and
+    `TransactionSetConfig#register` now raise `ArgumentError` when
+    called with neither a definition nor a block, instead of silently
+    storing `nil` under the key. Catches the `register("DEMO01")` typo
+    that would otherwise produce a confusing `NoMethodError` deep in
+    the parser.
 
   **Removed**
 
@@ -68,6 +74,11 @@ v Unreleased
   * Top-level `notes/` scratch directory — historical maintainer
     examples (X12 generator, recovery script, JSON writer demo) that
     all referenced the deleted X12 grammar tree. Still recoverable
+    from the `pre-x12-removal` tag.
+  * Top-level `examples/` directory (`generate.rb`, `tokenizer.rb`) —
+    both scripts were hard-wired to `Config.hipaa` and crashed at
+    runtime against the now-empty config. `spec/support/synthetic/` is
+    the canonical worked example; the old scripts are still recoverable
     from the `pre-x12-removal` tag.
 
   **Added**

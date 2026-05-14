@@ -29,6 +29,10 @@ module Stupidedi
       def register(gs08, gs01, st01, definition = nil, &constructor)
         if block_given?
           @table[Array[gs08, gs01, st01]] = constructor
+        elsif definition.nil?
+          raise ArgumentError,
+            "TransactionSetConfig#register(#{gs08.inspect}, #{gs01.inspect}, " \
+            "#{st01.inspect}) was called with no definition and no block"
         else
           @table[Array[gs08, gs01, st01]] = definition
         end

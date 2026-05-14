@@ -52,6 +52,10 @@ module Stupidedi
       def register(version, definition = nil, &constructor)
         if block_given?
           @table[version] = constructor
+        elsif definition.nil?
+          raise ArgumentError,
+            "InterchangeConfig#register(#{version.inspect}) was called " \
+            "with no definition and no block"
         else
           @table[version] = definition
         end
