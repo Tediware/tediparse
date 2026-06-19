@@ -51,6 +51,50 @@ Mirror that shape in your own application and register against
 factories are preserved for source compatibility but now return empty
 configs).
 
+### Generating a grammar from ASC X12 Table Data
+
+Hand-authoring is fine for a handful of segments, but a full transaction set
+is hundreds of definitions. If you license the **ASC X12 Table Data** (the
+official `.TXT` distribution — `ELEHEAD`, `SEGDETL`, `SETDETL`, `FREEFORM`,
+etc.), tediparse can generate the grammar definition files for you:
+
+```sh
+tediparse generate --release 005010 \
+  --table-data vendor/x12/table_data/005010 \
+  --out lib
+```
+
+or from Ruby:
+
+```ruby
+Stupidedi::Schema::Generation.run(
+  table_data: "vendor/x12/table_data/005010",
+  release:    "005010",
+  out:        "lib",
+  namespace:  "Edi" # root module for the emitted code (default: "Edi")
+)
+```
+
+This reads the flat files and writes a grammar tree under `<out>/<namespace>/`
+— per-version support modules, `element_defs.rb`, `segment_defs.rb`,
+`functional_group_def.rb`, one file per transaction set under `standards/`, an
+interchange envelope under `interchanges/`, and a `stupidedi_registration.rb`
+that wires everything onto a `Config`. Use `--dry-run` to preview without
+writing. Supported releases: `004010`, `004060`, `005010`, `006010`, `007010`,
+`008010`.
+
+By default the generated tree is loaded by your application's autoloader (e.g.
+Rails/Zeitwerk). If you are not using an autoloader, pass `--master-loader`
+(or `master_loader: true`) to also emit a single entry file (`<namespace>.rb`,
+e.g. `edi.rb`) that `require`s the whole tree in dependency order, so
+`require "edi"` is all you need.
+
+The X12 Table Data you supply is licensed X12 IP, and the generated grammar is
+a derivative you own — **neither ships with this gem.** The generator is the
+machine; you bring the material. The committed fixture under
+`spec/support/generation/table_data/` is a hand-written synthetic grammar in
+the same flat-file format, not real X12 content.
+
 ### Conformance suite
 
 If you have private grammars and need to keep them tested against tediparse,
