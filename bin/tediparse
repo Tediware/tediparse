@@ -19,7 +19,12 @@ parser = OptionParser.new do |opts|
     The X12 Table Data is licensed X12 IP that you supply; the generated grammar
     files are a derivative you own. This tool ships no X12 content.
 
-    Usage: tediparse generate --release CODE --table-data DIR [--out DIR] [options]
+    Usage:
+      tediparse generate --release CODE --table-data DIR [--out DIR] [options]
+      tediparse register --out DIR [--namespace NAME]
+
+    `register` rebuilds the whole-tree artifacts (stupidedi_registration.rb, and
+    the master loader if present) by scanning an existing generated tree.
 
     Options:
   BANNER
@@ -69,6 +74,25 @@ when "generate"
   end
 
   puts "Done: #{results.size} files (#{options[:write] ? 'written' : 'preview'})."
+when "register"
+  unless options[:out] && Dir.exist?(options[:out])
+    warn "register requires --out DIR pointing at an existing generated tree"
+    exit 1
+  end
+
+  begin
+    paths = Stupidedi::Schema::Generation.register(
+      out:       options[:out],
+      namespace: options[:namespace],
+      write:     options[:write],
+      logger:    ->(msg) { puts msg }
+    )
+  rescue ArgumentError => e
+    warn "Error: #{e.message}"
+    exit 1
+  end
+
+  puts "Done: rebuilt #{paths.size} file(s)#{options[:write] ? '' : ' (preview)'}."
 when nil, "help", "-h", "--help"
   puts parser.help
 else

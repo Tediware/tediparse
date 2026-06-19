@@ -45,7 +45,11 @@ module Stupidedi
           Dir.mktmpdir("tediparse-gen") do |staging|
             @staging = staging
             results = generate_all(release)
-            FileUtils.cp_r(File.join(staging, "."), ensure_out) if @write
+            if @write
+              ensure_out
+              replace_staged_release_dirs
+              FileUtils.cp_r(File.join(staging, "."), @out)
+            end
           end
 
           log "#{@write ? 'Wrote' : 'Previewed'} #{results.size} files under #{@out}"
@@ -67,10 +71,15 @@ module Stupidedi
             results << emit(DefinitionGenerator.new(ts, namespace: @namespace))
           end
 
-          # Registration and master loader scan the staging tree, so they must
-          # run after the files above are staged.
-          results << emit(RegistrationGenerator.new(out: @staging, namespace: @namespace))
-          results << emit(MasterLoaderGenerator.new(out: @staging, namespace: @namespace)) if @master_loader
+          # Registration and master loader are whole-tree artifacts. They scan
+          # [staging, out] so the emitted files cover the release just generated
+          # (in staging) UNION the releases already present under out, with
+          # staging shadowing out for the regenerated release. This keeps a
+          # multi-release output tree consistent and makes dry-run previews
+          # reflect the true resulting tree.
+          roots = [@staging, @out]
+          results << emit(RegistrationGenerator.new(roots: roots, namespace: @namespace))
+          results << emit(MasterLoaderGenerator.new(roots: roots, namespace: @namespace)) if @master_loader
           results
         end
 
@@ -120,6 +129,27 @@ module Stupidedi
         def ensure_out
           FileUtils.mkdir_p(@out)
           @out
+        end
+
+        # Remove the live-tree counterpart of every release directory the staging
+        # tree is about to deliver, so the regenerated release REPLACES (rather
+        # than merges into) what was there. Without this, a regeneration whose
+        # transaction-set list shrank would leave orphaned standards/*.rb behind -
+        # which the run itself shadows correctly, but which would later mislead a
+        # standalone Generation.register scan. The shared `interchanges/` dir and
+        # other releases are left untouched.
+        def replace_staged_release_dirs
+          Dir.glob(File.join(@staging, "*")).each do |namespace_dir|
+            next unless File.directory?(namespace_dir)
+
+            namespace_name = File.basename(namespace_dir)
+            Dir.glob(File.join(namespace_dir, "*")).each do |release_dir|
+              next unless File.directory?(release_dir)
+              next if File.basename(release_dir) == "interchanges"
+
+              FileUtils.rm_rf(File.join(@out, namespace_name, File.basename(release_dir)))
+            end
+          end
         end
 
         def log(message)

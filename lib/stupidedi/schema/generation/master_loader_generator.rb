@@ -5,16 +5,21 @@ module Stupidedi
     module Generation
       # Generates an optional master loader (e.g. edi.rb) that requires the whole
       # generated tree in dependency order, so a non-Rails consumer can pull in
-      # the entire grammar with a single `require "edi"`. Like the registration
-      # generator it scans the output directory, so it must run last.
+      # the entire grammar with a single `require "edi"`.
+      #
+      # Like the registration generator it is a whole-tree artifact: it scans an
+      # ordered list of roots and unions the releases found (earlier roots shadow
+      # later ones per release), so a run can scan [staging, out] and require the
+      # freshly generated release together with releases already under out.
       #
       # Not emitted by default - it adds a file the Rails-autoloaded layout does
       # not need. Pass master_loader: true (or --master-loader) to include it.
       class MasterLoaderGenerator
         include Support
 
-        def initialize(out:, namespace: "Edi")
-          @out = out
+        # @param roots [String, Array<String>] one or more base directories.
+        def initialize(roots:, namespace: "Edi")
+          @roots = Array(roots)
           @namespace = namespace
         end
 
@@ -28,16 +33,44 @@ module Stupidedi
 
         private
 
-        attr_reader :out
+        attr_reader :roots
 
-        def root
-          File.join(out, namespace_path)
+        def namespace_roots
+          roots.map { |r| File.join(r, namespace_path) }
         end
 
+        # [[dir_name, version_dir_path], ...] sorted by dir name, each release
+        # once, earlier roots shadowing later ones.
         def version_dirs
-          Dir.glob(File.join(root, "*"))
-            .select { |p| File.directory?(p) && VERSION_MODULES.value?(camelize(File.basename(p))) }
-            .sort
+          seen = {}
+          dirs = []
+          namespace_roots.each do |base|
+            Dir.glob(File.join(base, "*")).each do |dir|
+              next unless File.directory?(dir)
+
+              dir_name = File.basename(dir)
+              next unless VERSION_MODULES.value?(camelize(dir_name))
+              next if seen[dir_name]
+
+              seen[dir_name] = true
+              dirs << [dir_name, dir]
+            end
+          end
+          dirs.sort_by(&:first)
+        end
+
+        def interchange_basenames
+          names = {}
+          namespace_roots.each do |base|
+            Dir.glob(File.join(base, "interchanges", "*.rb")).each do |path|
+              names[File.basename(path, ".rb")] ||= true
+            end
+          end
+          names.keys.sort
+        end
+
+        def registration_present?
+          namespace_roots.any? { |base| File.exist?(File.join(base, "stupidedi_registration.rb")) }
         end
 
         def require_lines
@@ -45,26 +78,24 @@ module Stupidedi
 
           # Version loaders first - they set up the per-version autoloads that the
           # interchange and standards files (and the registration) depend on.
-          version_dirs.each do |dir|
-            lines << require_line("#{namespace_path}/#{File.basename(dir)}")
+          version_dirs.each do |dir_name, _|
+            lines << require_line("#{namespace_path}/#{dir_name}")
           end
 
           # Interchange envelopes.
-          Dir.glob(File.join(root, "interchanges", "*.rb")).sort.each do |file|
-            lines << require_line("#{namespace_path}/interchanges/#{File.basename(file, '.rb')}")
+          interchange_basenames.each do |basename|
+            lines << require_line("#{namespace_path}/interchanges/#{basename}")
           end
 
           # Transaction-set standards.
-          version_dirs.each do |dir|
-            base = File.basename(dir)
+          version_dirs.each do |dir_name, dir|
             Dir.glob(File.join(dir, "standards", "*.rb")).sort.each do |file|
-              lines << require_line("#{namespace_path}/#{base}/standards/#{File.basename(file, '.rb')}")
+              lines << require_line("#{namespace_path}/#{dir_name}/standards/#{File.basename(file, '.rb')}")
             end
           end
 
           # Registration last.
-          registration = File.join(root, "stupidedi_registration.rb")
-          lines << require_line("#{namespace_path}/stupidedi_registration") if File.exist?(registration)
+          lines << require_line("#{namespace_path}/stupidedi_registration") if registration_present?
 
           lines
         end

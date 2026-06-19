@@ -83,6 +83,13 @@ that wires everything onto a `Config`. Use `--dry-run` to preview without
 writing. Supported releases: `004010`, `004060`, `005010`, `006010`, `007010`,
 `008010`.
 
+You can keep several releases in one output tree. Generating an additional
+release preserves the ones already present: `stupidedi_registration.rb` (and the
+master loader, if any) are whole-tree artifacts that are rebuilt to cover every
+release in `out`, not just the one you just generated. To rebuild those
+aggregation files on their own — e.g. after adding or removing a release by other
+means — run `tediparse register --out DIR` (or `Stupidedi::Schema::Generation.register(out:)`).
+
 By default the generated tree is loaded by your application's autoloader (e.g.
 Rails/Zeitwerk). If you are not using an autoloader, pass `--master-loader`
 (or `master_loader: true`) to also emit a single entry file (`<namespace>.rb`,

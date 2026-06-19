@@ -55,6 +55,40 @@ module Stupidedi
           logger:        logger
         ).run
       end
+
+      # Rebuild the whole-tree aggregation artifacts by scanning the live output
+      # tree: stupidedi_registration.rb always, and the master loader too when one
+      # is present (so the rebuilt registration's constants are actually required;
+      # otherwise require "edi" would resolve to a NameError). Useful after adding
+      # or removing releases by other means; `run` already keeps these current for
+      # the releases it generates. Returns the paths (re)generated.
+      def self.register(out:, namespace: "Edi", write: true, logger: nil)
+        validate_namespace!(namespace)
+
+        paths = [write_artifact(RegistrationGenerator.new(roots: [out], namespace: namespace), out, write, logger)]
+
+        master_loader = MasterLoaderGenerator.new(roots: [out], namespace: namespace)
+        if File.exist?(File.join(out, master_loader.output_path))
+          paths << write_artifact(master_loader, out, write, logger)
+        end
+
+        paths
+      end
+
+      def self.write_artifact(generator, out, write, logger)
+        content = generator.generate
+        path = File.join(out, generator.output_path)
+
+        if write
+          require "fileutils"
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, content)
+          logger&.call("wrote #{path}")
+        end
+
+        path
+      end
+      private_class_method :write_artifact
     end
   end
 end

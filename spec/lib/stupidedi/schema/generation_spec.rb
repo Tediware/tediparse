@@ -3,6 +3,7 @@
 require "spec_helper"
 require "tmpdir"
 require "shellwords"
+require "fileutils"
 
 describe Stupidedi::Schema::Generation do
   Generation = Stupidedi::Schema::Generation
@@ -279,6 +280,112 @@ describe Stupidedi::Schema::Generation do
         expect(results.map(&:written)).to all(be(false))
       end
     end
+  end
+
+  describe "multi-release aggregation" do
+    # The registration/master loader are whole-tree artifacts: generating one
+    # release must not drop the others already present under out.
+    it "unions the generated release with releases already present under out" do
+      Dir.mktmpdir do |out|
+        seed_release(out, "forty_ten", "AA999", "four_oh_one")
+
+        Generation.run(table_data: fixture_dir, release: "005010", out: out, master_loader: true, logger: ->(_) {})
+
+        reg = File.read(File.join(out, "edi/stupidedi_registration.rb"))
+        expect(reg).to include('INTERCHANGE_VERSIONS = %w[00401 00501].freeze')
+        expect(reg).to include('FUNCTIONAL_GROUP_VERSIONS = %w[004010 005010].freeze')
+        expect(reg).to include('x.register("004010", "AA", "999") { Edi::FortyTen::Standards::AA999 }')
+        expect(reg).to include('x.register("005010", "SM", "204") { Edi::FiftyTen::Standards::SM204 }')
+
+        loader = File.read(File.join(out, "edi.rb"))
+        expect(loader).to include('require "edi/forty_ten"')
+        expect(loader).to include('require "edi/fifty_ten"')
+
+        # The pre-existing release's files are left untouched.
+        expect(File).to exist(File.join(out, "edi/forty_ten/standards/AA999.rb"))
+      end
+    end
+
+    it "reflects the union in a dry-run preview without writing the new release" do
+      Dir.mktmpdir do |out|
+        seed_release(out, "forty_ten", "AA999", "four_oh_one")
+
+        results = Generation.run(table_data: fixture_dir, release: "005010", out: out, write: false, logger: ->(_) {})
+        reg = results.find { |r| r.relative_path == "edi/stupidedi_registration.rb" }
+
+        expect(reg.content).to include('FUNCTIONAL_GROUP_VERSIONS = %w[004010 005010].freeze')
+        expect(reg.content).to include('x.register("004010", "AA", "999") { Edi::FortyTen::Standards::AA999 }')
+        expect(reg.content).to include('x.register("005010", "SM", "204") { Edi::FiftyTen::Standards::SM204 }')
+
+        # Nothing for the previewed release was written.
+        expect(File).not_to exist(File.join(out, "edi/fifty_ten"))
+      end
+    end
+
+    it "shadows an on-disk release with the freshly generated one (regeneration)" do
+      Dir.mktmpdir do |out|
+        # A stale fifty_ten already on disk, carrying a transaction set the
+        # current table data no longer produces.
+        seed_release(out, "fifty_ten", "ZZ888", "five_oh_one")
+
+        Generation.run(table_data: fixture_dir, release: "005010", out: out, logger: ->(_) {})
+
+        reg = File.read(File.join(out, "edi/stupidedi_registration.rb"))
+        # The freshly generated set wins...
+        expect(reg).to include('x.register("005010", "SM", "204")')
+        # ...the stale entry is shadowed out of the registration...
+        expect(reg).not_to include("ZZ888")
+        # ...and the orphaned file is removed from the tree (replace, not merge).
+        expect(File).not_to exist(File.join(out, "edi/fifty_ten/standards/ZZ888.rb"))
+        # fifty_ten registered exactly once (no duplicate from the two roots).
+        expect(reg.scan('x.register("005010") {').size).to eq(1)
+      end
+    end
+
+    it "Generation.register rebuilds the registration from the whole live tree" do
+      Dir.mktmpdir do |out|
+        seed_release(out, "forty_ten", "AA999", "four_oh_one")
+        seed_release(out, "fifty_ten", "SM204", "five_oh_one")
+
+        Generation.register(out: out, logger: ->(_) {})
+
+        reg = File.read(File.join(out, "edi/stupidedi_registration.rb"))
+        expect(reg).to include('FUNCTIONAL_GROUP_VERSIONS = %w[004010 005010].freeze')
+        expect(reg).to include('x.register("004010", "AA", "999") { Edi::FortyTen::Standards::AA999 }')
+        expect(reg).to include('x.register("005010", "SM", "204") { Edi::FiftyTen::Standards::SM204 }')
+
+        # No master loader present -> none is created.
+        expect(File).not_to exist(File.join(out, "edi.rb"))
+      end
+    end
+
+    it "Generation.register keeps the master loader in sync when one is present" do
+      Dir.mktmpdir do |out|
+        seed_release(out, "forty_ten", "AA999", "four_oh_one")
+        seed_release(out, "fifty_ten", "SM204", "five_oh_one")
+        # A stale master loader that only knows about forty_ten.
+        File.write(File.join(out, "edi.rb"), %(require "tediparse"\nrequire "edi/forty_ten"\n))
+
+        Generation.register(out: out, logger: ->(_) {})
+
+        loader = File.read(File.join(out, "edi.rb"))
+        expect(loader).to include('require "edi/forty_ten"')
+        expect(loader).to include('require "edi/fifty_ten"') # picked up the release the stale loader missed
+        expect(loader).to include('require "edi/stupidedi_registration"')
+      end
+    end
+  end
+
+  # Writes a minimal placeholder grammar tree for one release under out/edi so the
+  # whole-tree scanners (registration/master loader) see it. Only the file/dir
+  # names matter to those scanners, not the contents.
+  def seed_release(out, version_dir, standard, interchange_file)
+    base = File.join(out, "edi")
+    FileUtils.mkdir_p(File.join(base, version_dir, "standards"))
+    FileUtils.mkdir_p(File.join(base, "interchanges"))
+    File.write(File.join(base, version_dir, "functional_group_def.rb"), "# placeholder\n")
+    File.write(File.join(base, version_dir, "standards", "#{standard}.rb"), "# placeholder\n")
+    File.write(File.join(base, "interchanges", "#{interchange_file}.rb"), "# placeholder\n")
   end
 
   # Loads the freshly generated grammar in a clean child process (so the Edi::*
