@@ -24,5 +24,7 @@ module Stupidedi
     autoload :RepeatCount,          "stupidedi/schema/repeat_count"
     autoload :SyntaxNote,           "stupidedi/schema/syntax_note"
     autoload :CodeList,             "stupidedi/schema/code_list"
+
+    autoload :Generation,           "stupidedi/schema/generation"
   end
 end

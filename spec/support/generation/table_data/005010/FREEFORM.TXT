@@ -1,0 +1,12 @@
+*ELECOD
+353, ,00,1
+Original
+*ELECOD
+353, ,01,1
+Cancellation
+*SEGNTE
+BGN,02,S,1
+This semantic note must be ignored by the reader.
+*SEGNTE
+BGN,01,N,1
+P0203

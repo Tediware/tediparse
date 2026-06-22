@@ -1,0 +1,2 @@
+"204","Motor Carrier Load Tender","SM"
+"997","Functional Acknowledgment",""

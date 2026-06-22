@@ -14,8 +14,11 @@ Gem::Specification.new do |s|
 
   s.files             = ["README.md", "Rakefile",
                          "lib/**/*",
+                         "bin/**/*",
                          "doc/**/*.md"].map {|glob| Dir[glob] }.flatten
   s.require_path      = "lib"
+  s.bindir            = "bin"
+  s.executables       = ["tediparse"]
 
   s.add_dependency "term-ansicolor", "~> 1.3"
   s.add_dependency "cantor",         "~> 1.2.1"

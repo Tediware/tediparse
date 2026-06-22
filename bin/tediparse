@@ -1,0 +1,102 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+require "stupidedi"
+
+options = {
+  namespace: "Edi",
+  out: ".",
+  write: true
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = <<~BANNER
+    tediparse - generate Stupidedi grammar definitions from ASC X12 Table Data.
+
+    The X12 Table Data is licensed X12 IP that you supply; the generated grammar
+    files are a derivative you own. This tool ships no X12 content.
+
+    Usage:
+      tediparse generate --release CODE --table-data DIR [--out DIR] [options]
+      tediparse register --out DIR [--namespace NAME]
+
+    `register` rebuilds the whole-tree artifacts (stupidedi_registration.rb, and
+    the master loader if present) by scanning an existing generated tree.
+
+    Options:
+  BANNER
+
+  opts.on("-r", "--release CODE", "X12 release code (e.g. 005010)") { |v| options[:release] = v }
+  opts.on("-t", "--table-data DIR", "Directory of ASC X12 Table Data .TXT files") { |v| options[:table_data] = v }
+  opts.on("-o", "--out DIR", "Output directory (default: current dir)") { |v| options[:out] = v }
+  opts.on("-n", "--namespace NAME", "Root Ruby module for generated code (default: Edi)") { |v| options[:namespace] = v }
+  opts.on("--master-loader", "Also emit a single-require entry file (e.g. edi.rb)") { options[:master_loader] = true }
+  opts.on("--dry-run", "Preview only; write nothing") { options[:write] = false }
+  opts.on("-h", "--help", "Show this help") do
+    puts opts
+    exit
+  end
+end
+
+command = ARGV.shift
+parser.parse!(ARGV)
+
+case command
+when "generate"
+  missing = %i[release table_data].reject { |k| options[k] }
+  unless missing.empty?
+    warn "Missing required option(s): #{missing.map { |k| "--#{k.to_s.tr('_', '-')}" }.join(', ')}"
+    warn parser.help
+    exit 1
+  end
+
+  unless Dir.exist?(options[:table_data])
+    warn "Table data directory not found: #{options[:table_data]}"
+    exit 1
+  end
+
+  begin
+    results = Stupidedi::Schema::Generation.run(
+      table_data:    options[:table_data],
+      release:       options[:release],
+      out:           options[:out],
+      namespace:     options[:namespace],
+      write:         options[:write],
+      master_loader: options.fetch(:master_loader, false),
+      logger:        ->(msg) { puts msg }
+    )
+  rescue ArgumentError => e
+    warn "Error: #{e.message}"
+    exit 1
+  end
+
+  puts "Done: #{results.size} files (#{options[:write] ? 'written' : 'preview'})."
+when "register"
+  unless options[:out] && Dir.exist?(options[:out])
+    warn "register requires --out DIR pointing at an existing generated tree"
+    exit 1
+  end
+
+  begin
+    paths = Stupidedi::Schema::Generation.register(
+      out:       options[:out],
+      namespace: options[:namespace],
+      write:     options[:write],
+      logger:    ->(msg) { puts msg }
+    )
+  rescue ArgumentError => e
+    warn "Error: #{e.message}"
+    exit 1
+  end
+
+  puts "Done: rebuilt #{paths.size} file(s)#{options[:write] ? '' : ' (preview)'}."
+when nil, "help", "-h", "--help"
+  puts parser.help
+else
+  warn "Unknown command: #{command}"
+  warn parser.help
+  exit 1
+end
