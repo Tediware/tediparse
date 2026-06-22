@@ -104,7 +104,13 @@ module Stupidedi
           # Composite elements don't have the E prefix
           element_ref = element.is_composite ? element.code : "E#{element.code}"
 
-          "#{indent(4)}e::#{element_ref}.simple_use(#{requirement}, s::RepeatCount.bounded(1))#{trailing_comma}#{comment}"
+          "#{indent(4)}e::#{element_ref}.simple_use(#{requirement}, #{repeat_count_expr(element_use.max_reps)})#{trailing_comma}#{comment}"
+        end
+
+        # nil max_reps -> unbounded (the ">1" repetition marker); an integer
+        # count -> bounded(n). A non-repeating element use carries 1.
+        def repeat_count_expr(max_reps)
+          max_reps.nil? ? "s::RepeatCount.unbounded" : "s::RepeatCount.bounded(#{max_reps})"
         end
 
         def generate_syntax_note(syntax_note, is_last:)

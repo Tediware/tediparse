@@ -37,7 +37,9 @@ module Stupidedi
         Segment = Struct.new(:code, :name, :purpose, :element_uses, :syntax_notes, keyword_init: true)
 
         # An element referenced from a specific position within a segment.
-        ElementUse = Struct.new(:position, :requirement, :element, keyword_init: true)
+        # #max_reps is the element's repetition count: an integer for a bounded
+        # repeat, or nil for unbounded (">1"). A non-repeating element use is 1.
+        ElementUse = Struct.new(:position, :requirement, :element, :max_reps, keyword_init: true)
 
         # A segment syntax rule (P/R/C/E/L) over a set of element positions.
         SyntaxNote = Struct.new(:condition_type, :element_positions, :description, keyword_init: true)

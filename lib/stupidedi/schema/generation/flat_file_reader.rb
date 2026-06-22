@@ -121,7 +121,7 @@ module Stupidedi
           end
         end
 
-        # SEGDETL.TXT (segment, position, element, requirement)
+        # SEGDETL.TXT (segment, position, element, requirement, repetition count)
         def read_element_uses
           each_csv("SEGDETL.TXT") do |row|
             segment = @segments_by_code[row[0]] or next
@@ -133,7 +133,8 @@ module Stupidedi
             segment.element_uses << Models::ElementUse.new(
               position: position,
               requirement: map_requirement(row[3]),
-              element: element
+              element: element,
+              max_reps: parse_element_reps(row[4])
             )
           end
         end
@@ -373,6 +374,16 @@ module Stupidedi
         # ">1" means unbounded (nil); anything else is a fixed count.
         def parse_reps(value)
           value == ">1" ? nil : value.to_i
+        end
+
+        # SEGDETL field 5 is the element's repetition count. ">1" means unbounded
+        # (nil); a blank, zero, or absent count is a single occurrence (1), which
+        # the engine represents as RepeatCount.bounded(1) for a non-repeating use.
+        def parse_element_reps(value)
+          return nil if value == ">1"
+
+          n = value.to_i
+          n.positive? ? n : 1
         end
 
         def positive_or_nil(value)

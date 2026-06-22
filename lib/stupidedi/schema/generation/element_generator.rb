@@ -119,9 +119,7 @@ module Stupidedi
         end
 
         def generate_element_def(element)
-          stupidedi_type = TYPE_MAPPING.fetch(element.x12_type) do
-            raise ArgumentError, "Unknown x12_type: #{element.x12_type} for element #{element.code}"
-          end
+          stupidedi_type = stupidedi_type_for(element)
 
           if element.x12_type == "ID" && element.element_codes.any?
             generate_id_element(element, stupidedi_type)
@@ -130,6 +128,18 @@ module Stupidedi
           else
             generate_simple_element(element, stupidedi_type)
           end
+        end
+
+        # The X12 Nn type carries 0-9 implied decimals, so any "N<digits>" is a
+        # valid numeric type even when not enumerated in TYPE_MAPPING (e.g. N3,
+        # N5, N7, N8, N9). The engine's Nn accepts arbitrary precision, so map
+        # them all to :Nn rather than raising.
+        def stupidedi_type_for(element)
+          type = element.x12_type
+          return TYPE_MAPPING[type] if TYPE_MAPPING.key?(type)
+          return :Nn if type.to_s =~ /\AN\d+\z/
+
+          raise ArgumentError, "Unknown x12_type: #{type} for element #{element.code}"
         end
 
         def generate_composite_def(composite)

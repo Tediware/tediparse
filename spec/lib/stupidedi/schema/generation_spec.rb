@@ -33,6 +33,12 @@ describe Stupidedi::Schema::Generation do
       expect(reqs).to eq(%w[Mandatory Optional Optional])
     end
 
+    it "reads the SEGDETL repetition count into the element use (default 1)" do
+      ref = release.segments.find { |s| s.code == "REF" }
+      uses = ref.element_uses.sort_by(&:position)
+      expect(uses.map(&:max_reps)).to eq([1, 5]) # 127 once, 353 up to five times
+    end
+
     it "treats type-less elements (separators) as control elements" do
       i65 = release.elements.find { |e| e.code == "I65" }
       i15 = release.elements.find { |e| e.code == "I15" }
@@ -100,6 +106,24 @@ describe Stupidedi::Schema::Generation do
       expect(with).to include("e::C001.simple_use(")
       # syntax note from the EOF-flushed block
       expect(with).to include("SyntaxNotes::P.build(2, 3)")
+      # element repeat count from SEGDETL: REF's 353 repeats up to 5 times,
+      # while a non-repeating use stays bounded(1).
+      expect(with).to include("e::E353.simple_use(r::Optional, s::RepeatCount.bounded(5))")
+      expect(with).to include("e::E127.simple_use(r::Mandatory, s::RepeatCount.bounded(1))")
+    end
+
+    it "maps higher-precision Nn types (N3/N5/N7/N8/N9) the engine supports" do
+      rel = Generation::Models::Release.new(
+        code: "005010",
+        elements: [Generation::Models::Element.new(
+          code: "9999", name: "Synthetic Decimal", description: nil,
+          x12_type: "N3", is_composite: false, min_length: 1, max_length: 9,
+          digits: 3, element_codes: [], component_uses: []
+        )],
+        segments: [], transaction_sets: []
+      )
+      out = Generation::ElementGenerator.new(rel).generate
+      expect(out).to include('E9999 ||= t::Nn.new(:E9999, "Synthetic Decimal", 1, 9, 3)')
     end
 
     it "emits the transaction set with nested loop and correct positions" do
@@ -137,6 +161,32 @@ describe Stupidedi::Schema::Generation do
       expect(out).to include("module FiveOhOne")
       expect(out).to include("Stupidedi::Reader::Separators.new(isa.element(16).to_s, isa.element(11).to_s, nil, nil)")
       expect(out).to include('end.new "00501",')
+      # replace_separators re-stamps ISA11 with the repetition separator (and
+      # ISA16 with the component separator) on a repetition-enabled release.
+      expect(out).to include("isa.element(11).copy(:value => separators.repetition),")
+      expect(out).to include("isa.element(16).copy(:value => separators.component)]")
+    end
+
+    it "leaves ISA11 untouched for a release with no repetition separator" do
+      isa = Generation::Models::Segment.new(
+        code: "ISA", name: "Interchange Control Header", purpose: nil, syntax_notes: [],
+        element_uses: (1..16).map do |i|
+          Generation::Models::ElementUse.new(
+            position: i, requirement: "Mandatory", max_reps: 1,
+            element: Generation::Models::Element.new(
+              code: (i == 11 ? "I10" : "I#{i}"), name: "x", description: nil,
+              x12_type: nil, is_composite: false, min_length: 1, max_length: 1,
+              digits: nil, element_codes: [], component_uses: []
+            )
+          )
+        end
+      )
+      rel = Generation::Models::Release.new(code: "005010", elements: [], segments: [isa], transaction_sets: [])
+      out = Generation::InterchangeGenerator.new(rel).generate
+
+      expect(out).to include("isa.element(11),")
+      expect(out).not_to include("separators.repetition")
+      expect(out).to include("isa.element(16).copy(:value => separators.component)]")
     end
 
     it "emits the functional group def with the full release code" do

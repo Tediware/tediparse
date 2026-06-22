@@ -70,12 +70,23 @@ module Stupidedi
 
         def replace_separators_method
           isa_element_count = isa_segment.element_uses.size
+          rewrite_repetition = has_repetition_separator?
 
-          element_refs = (1...isa_element_count).map do |i|
-            "               isa.element(#{i}),"
+          element_refs = (1..isa_element_count).map do |i|
+            suffix =
+              if i == isa_element_count
+                # Last element (ISA16) carries the component separator.
+                ".copy(:value => separators.component)]"
+              elsif rewrite_repetition && i == 11
+                # ISA11 carries the repetition separator on releases that use one
+                # (I65), matching the reference spec/support/synthetic envelope.
+                ".copy(:value => separators.repetition),"
+              else
+                ","
+              end
+
+            "               isa.element(#{i})#{suffix}"
           end
-          # Last element gets the separators.component replacement
-          element_refs << "               isa.element(#{isa_element_count}).copy(:value => separators.component)]"
 
           <<~RUBY.strip
             # @return [SegmentVal]
