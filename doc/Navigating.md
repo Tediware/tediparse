@@ -9,9 +9,9 @@ information hidden by [`StateMachine`][1] provides an efficient means to search
 the parse tree for specific segments.
 
 For information on how to construct a parse tree programmatically, see the
-document on {file:Generating.md Generating X12}. The [`StateMachine`][1] can be
+document on [Generating X12](Generating.md). The [`StateMachine`][1] can be
 accessed via the [`BuilderDsl#machine`][4] method. For information about how
-to construct a parse tree from an input stream, see {file:Parsing.md Parsing X12}.
+to construct a parse tree from an input stream, see [Parsing X12](Parsing.md).
 
 Iterating Segments
 ------------------
@@ -207,8 +207,7 @@ is not reachable will cause [`#find`][14] to raise an exception. To be clear,
 
 #### Sibling Segments
 
-<iframe src="images/837P-siblings.png" frameborder="no" scrolling="yes" height="430" width="100%"></iframe>
-<a href="images/837P-siblings.png">View diagram</a>
+![Sibling segments in the 837P parse tree](images/837P-siblings.png)
 
 Segments connected directly by a horizontal dashed black line are siblings and
 are reachable using [`#find`][14]. For instance, from the third `NM1`, the `N3`,
@@ -249,12 +248,11 @@ there are no segments in Loop 2000A that follow the child loops.
 
 #### Nephew Segments
 
-<iframe src="images/837P-nephews.png" frameborder="no" scrolling="yes" height="450" width="100%"></iframe>
-<a href="images/837P-nephews.png">View diagram</a>
+![Nephew segments in the 837P parse tree](images/837P-nephews.png)
 
 Segments that occur as the _first_ direct child of a sibling node are nephews.
 The siblings that _follow_ the first child are not directly reachable, but they
-can be reached indirectly by [chaining](#Chaining_Method_Calls) two calls to
+can be reached indirectly by [chaining](#chaining-method-calls) two calls to
 [`#find`][14]. For example, `GS` is a nephew of `ISA`, and `ST` has two nephews
 named `NM1`; but `BHT` is _not_ a nephew of `GS` because it is not the first
 child of its parent node.
@@ -282,8 +280,7 @@ problems.
 
 #### Cousin Segments
 
-<iframe src="images/837P-cousins.png" frameborder="no" scrolling="yes" height="470" width="100%"></iframe>
-<a href="images/837P-cousins.png">View diagram</a>
+![Cousin segments in the 837P parse tree](images/837P-cousins.png)
 
 Segments that occurr as the _first_ child of a sibling of the parent node are
 cousins of the current segment. Similar to the restriction on nephew segments,
@@ -300,15 +297,14 @@ all segments in Table 1.
 
 You may have noticed, in some cases there are more than one cousin with the same
 segment identifier -- there are three cousins of `BHT` named `HL`, for instance.
-See [Element Constraints](#Element_Constraints) for information on how to find a
+See [Element Constraints](#element-constraints) for information on how to find a
 *specific* occurrence of `HL` segment based on its qualifier elements, or
-[Chaining Method Calls](#Chaining_Method_Calls) for details on iterating each
+[Chaining Method Calls](#chaining-method-calls) for details on iterating each
 `HL` segment, one-at-a-time.
 
 #### Parent Segments
 
-<iframe src="images/837P-parents.png" frameborder="no" scrolling="yes" height="450" width="100%"></iframe>
-<a href="images/837P-parents.png">View diagram</a>
+![Parent segments in the 837P parse tree](images/837P-parents.png)
 
 Internal knowledge of the underlying tree structure makes it possible to
 *rewind* to the first segment of a parent structure, using the [`#parent`][15]
@@ -398,7 +394,7 @@ You can get a list of potentially reachable segments from the current position
 by calling [`#successors`][22], which returns one [`InstructionTable`][23] per
 active state. That is, when the machine is in a deterministic state, a single
 [`InstructionTable`][23] will be returned. See the section on
-[Non-determinism](#Non-determinism) for more information.
+[Non-determinism](#non-determinism) for more information.
 
     pp b.successors
 
@@ -511,7 +507,7 @@ first ISA segment in the document, because it started searching *after* `m`,
 which is the first ISA.
 
 Since [`#iterate`][25] calls [`#find`][14], it enforces the same [syntactic
-constraints](#Syntactic_Constraints).
+constraints](#syntactic-constraints).
 
 #### Side Effects
 
@@ -620,6 +616,31 @@ each tree's version of the `HL` segment, one named "Patient Detail", one named
 all have the same element values, but have a different meaning.
 
 ### Resolution
+
+Non-determinism is almost always temporary. As the parser reads further, the
+hypotheses that cannot account for the next segment are discarded, and the
+machine collapses back toward a single parse tree. You can check where you stand
+at any point with [`#deterministic?`][24], and inspect the live interpretations
+with [`#successors`][23]. Once the machine is deterministic again, the methods
+that return a single node — [`#segment`][6], [`#element`][11], and `#zipper` —
+start succeeding once more.
+
+There are two ways to resolve ambiguity:
+
+  - **Read more input.** Let the parser consume the segments that distinguish
+    the candidates; the wrong hypotheses fail on their own and drop out. This is
+    the usual case — by the time you navigate to the segment you care about, the
+    surrounding context has already disambiguated it.
+
+  - **Constrain the search.** When you navigate with [`#find`][14] (or
+    [`#iterate`][25]) you can pass element values that act as qualifiers, so only
+    the interpretation matching those values is selected. See
+    [Element Constraints](#element-constraints).
+
+When *generating* a document with [`BuilderDsl`](Generating.md) the situation is
+stricter: the builder refuses to proceed from a non-deterministic state, so you
+must supply enough qualifier detail (the discriminating element values) for each
+segment to resolve to a single slot as you add it.
 
   [1]: Stupidedi/Parser/StateMachine.html
   [2]: Stupidedi/Values/LoopVal.html

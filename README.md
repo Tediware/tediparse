@@ -1,7 +1,7 @@
 # Tediparse
 
 - [GitHub project](https://github.com/Tediware/tediparse)
-- [Human Documentation](https://github.com/Tediware/tediparse/tree/master/doc)
+- [Human Documentation](doc/README.md)
 
 Tediparse is a library for **parsing, generating, and validating** ASC X12 EDI
 documents. You bring the X12 transaction-set grammar; the library walks it.

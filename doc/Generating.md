@@ -88,7 +88,7 @@ should be the elements of the segment.
 > _Note_: The repetition separator "&#136;" and component separator ":" have no
 > special meaning when generating X12. These elements are only meaningful to
 > Stupidedi when parsing X12 from an input stream (see
-> [Parsing X12](Parsing.html)).
+> [Parsing X12](Parsing.md)).
 
 Alternatively, the [`#segment!`][5] method can be used to avoid the method
 lookup overhead incurred by `method_missing`.
@@ -279,7 +279,7 @@ the current state:
 
 The above output pertains to the X222 837 implementation guide. The output shows
 a single active [`InstructionTable`][20] and the segments it is able to accept.
-For more information about how the parser works, see {file:design/Parser.md Parser Design}.
+For more information about how the parser works, see [Parsing X12](Parsing.md).
 Attempting to generate a segment that is not a member of at least one of the
 instruction tables will cause a [`ParseError`][17] to be raised.
 
