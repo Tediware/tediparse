@@ -1,4 +1,5 @@
 require "pathname"
+require "fileutils"
 abspath = Pathname.new(File.dirname(__FILE__)).expand_path
 relpath = abspath.relative_path_from(Pathname.pwd)
 
@@ -20,8 +21,11 @@ end
 require "yard"
 YARD::Rake::YardocTask.new(:yard => :clobber_yard)
 task :clobber_yard do
-  rm_rf "#{relpath}/build/generated/doc"
-  mkdir_p "#{relpath}/build/generated/doc/images"
+  # Call FileUtils directly rather than Rake's DSL shim: on Ruby 3.x the
+  # rake-12.3 FileUtilsExt wrapper forwards its verbose/noop flags as a
+  # positional argument, which the keyword-only FileUtils.rm_rf rejects.
+  FileUtils.rm_rf "#{relpath}/build/generated/doc"
+  FileUtils.mkdir_p "#{relpath}/build/generated/doc/images"
 end
 
 task :console do
