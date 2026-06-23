@@ -54,9 +54,13 @@ configs).
 ### Generating a grammar from ASC X12 Table Data
 
 Hand-authoring is fine for a handful of segments, but a full transaction set
-is hundreds of definitions. If you license the **ASC X12 Table Data** (the
-official `.TXT` distribution — `ELEHEAD`, `SEGDETL`, `SETDETL`, `FREEFORM`,
-etc.), tediparse can generate the grammar definition files for you:
+is hundreds of definitions. With an **ASC X12 license** you can download the
+**Table Data** (the official `.TXT` distribution — `ELEHEAD`, `SEGDETL`,
+`SETDETL`, `FREEFORM`, etc.) from <https://ecommerce.x12.org/downloads>, and
+tediparse can generate the grammar definition files for you. The full
+walkthrough — input file formats, the output tree, loading, multi-release
+trees, and how it works — is in
+[doc/Generating-Grammars.md](doc/Generating-Grammars.md); the short version:
 
 ```sh
 tediparse generate --release 005010 \

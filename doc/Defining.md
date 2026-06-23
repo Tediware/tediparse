@@ -1,3 +1,10 @@
+> This page covers transcribing a grammar **by hand**. If you license the ASC
+> X12 Table Data flat files, tediparse can generate the whole definition tree
+> for a release instead — see
+> [Generating-Grammars.md](Generating-Grammars.md). Hand-authoring as below is
+> still the right approach for a small custom grammar or for understanding what
+> the generator emits.
+
 Be sure you start with the right documentation, which must be purchased from [ASC
 X12](http://x12.org/). Documentation from a trading partner might be usable in a
 pinch, but is often missing details or has details relevant only to that

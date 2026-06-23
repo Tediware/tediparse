@@ -1,8 +1,13 @@
 Generating X12
 ==============
 
+> This page is about generating X12 *documents* (emitting EDI). To generate
+> the *grammar* itself from ASC X12 Table Data, see
+> [Generating-Grammars.md](Generating-Grammars.md).
+
 Tediparse has a simple interface for generating X12 documents. Once you have
-defined a transaction set or implementation guide (see [Defining](Defining.md)),
+defined a transaction set or implementation guide (see [Defining](Defining.md))
+— by hand, or by [generating it from X12 Table Data](Generating-Grammars.md) —
 you can generate well-formed documents using [`BuilderDsl`][1].
 
   [1]: Stupidedi/Parser/BuilderDsl.html
