@@ -19,7 +19,7 @@ describe Stupidedi::Schema::Generation do
       expect(release.code).to eq("005010")
       expect(release.elements.size).to eq(31)   # 30 simple + 1 composite
       expect(release.segments.size).to eq(9)
-      expect(release.transaction_sets.map(&:code)).to contain_exactly("204", "997")
+      expect(release.transaction_sets.map(&:code)).to contain_exactly("204", "997", "123")
     end
 
     it "reads a transaction set with no functional group as nil func_group" do
@@ -82,6 +82,44 @@ describe Stupidedi::Schema::Generation do
     it "wires each transaction set back to its release" do
       expect(release.transaction_sets.first.release).to be(release)
     end
+
+    # X12 loop IDs are only unique within their nesting context. The "123" set
+    # carries the collision shape from the real 004010 850 (heading N1 loop vs
+    # the N1 loop nested under SPI): a level-1 REF loop, then a level-2 REF
+    # loop nested under a TA1 loop, each with its own repeat count.
+    describe "same-ID loops at different nesting positions" do
+      let(:ts)         { release.transaction_sets.find { |t| t.code == "123" } }
+      let(:detail)     { ts.table_definitions.find { |t| t.area == "detail" } }
+      let(:outer_ref)  { detail.ordered_children[0] }
+      let(:ta1)        { detail.ordered_children[1] }
+      let(:nested_ref) { ta1.ordered_children.find { |c| !c.segment_use? } }
+
+      it "creates a distinct LoopDefinition per opening row" do
+        expect(outer_ref.identifier).to eq("REF")
+        expect(ta1.identifier).to eq("TA1")
+        expect(ta1.ordered_children.reject(&:segment_use?).map(&:identifier)).to eq(["REF"])
+        expect(nested_ref).not_to be(outer_ref)
+      end
+
+      it "keeps the outer loop's children free of the nested loop's rows" do
+        expect(outer_ref.ordered_children.map { |c| [c.segment.code, c.position] })
+          .to eq([["REF", 100], ["BGN", 200]])
+      end
+
+      it "preserves the nested loop's own repeat count" do
+        expect(outer_ref.max_reps).to eq(200)
+        expect(nested_ref.max_reps).to eq(20)
+        expect(nested_ref.ordered_children.map { |c| c.segment.code }).to eq(%w[REF BGN])
+      end
+
+      it "drops no segment row" do
+        flatten = lambda do |node|
+          node.children.flat_map { |c| c.segment_use? ? [c] : flatten.call(c) }
+        end
+        segment_uses = ts.table_definitions.flat_map { |t| flatten.call(t) }
+        expect(segment_uses.size).to eq(8) # one per SETDETL row for "123"
+      end
+    end
   end
 
   describe "generators" do
@@ -133,6 +171,13 @@ describe Stupidedi::Schema::Generation do
       expect(out).to include('s::ST.use(100, r::Mandatory, d::RepeatCount.bounded(1))')
       expect(out).to include('d::LoopDef.build("N1", d::RepeatCount.unbounded,')
       expect(out).to include('s::REF.use(100, r::Optional, d::RepeatCount.bounded(1))')
+    end
+
+    it "emits two distinct LoopDefs for same-ID loops at different nesting positions" do
+      ts = release.transaction_sets.find { |t| t.code == "123" }
+      out = Generation::DefinitionGenerator.new(ts).generate
+      expect(out).to include('d::LoopDef.build("REF", d::RepeatCount.bounded(200),')
+      expect(out).to include('d::LoopDef.build("REF", d::RepeatCount.bounded(20),')
     end
 
     it "prefixes 'TS' for a transaction set with no functional group" do
@@ -221,6 +266,7 @@ describe Stupidedi::Schema::Generation do
         edi/fifty_ten/segment_defs.rb
         edi/fifty_ten/segment_reqs.rb
         edi/fifty_ten/standards/SM204.rb
+        edi/fifty_ten/standards/TS123.rb
         edi/fifty_ten/standards/TS997.rb
         edi/fifty_ten/syntax_notes.rb
         edi/interchanges/five_oh_one.rb

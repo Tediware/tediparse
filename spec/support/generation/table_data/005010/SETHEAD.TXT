@@ -1,2 +1,3 @@
 "204","Motor Carrier Load Tender","SM"
 "997","Functional Acknowledgment",""
+"123","Loop Collision Test",""

@@ -184,7 +184,6 @@ module Stupidedi
         # tracking a per-(ts, area) loop stack indexed by level.
         def read_structure
           tables_by_ts = Hash.new { |h, k| h[k] = {} }
-          loops_cache = {}
           loop_stack_by_context = Hash.new { |h, k| h[k] = [] }
 
           each_csv("SETDETL.TXT") do |row|
@@ -210,25 +209,23 @@ module Stupidedi
                 loop_stack_by_context[context_key] = []
                 table
               elsif loop_id
-                loop_cache_key = "#{ts_code}_#{area}_#{loop_id}"
+                # Every row carrying a loop_id opens a loop (member rows carry
+                # an empty loop_id), and loop IDs are only unique within their
+                # nesting context — the same ID can open distinct loops at
+                # different positions in one area, so no caching by ID here.
+                loop_parent = stack[loop_level - 1] || table
 
-                unless loops_cache[loop_cache_key]
-                  loop_parent = loop_level == 1 ? table : stack[loop_level - 1]
-                  loop_parent ||= table
+                loop_def = Models::LoopDefinition.new(
+                  identifier: loop_id,
+                  max_reps: parse_reps(loop_repeat),
+                  position: sequence.to_i,
+                  children: []
+                )
+                loop_parent.children << loop_def
 
-                  loop_def = Models::LoopDefinition.new(
-                    identifier: loop_id,
-                    max_reps: parse_reps(loop_repeat),
-                    position: sequence.to_i,
-                    children: []
-                  )
-                  loop_parent.children << loop_def
-                  loops_cache[loop_cache_key] = loop_def
-                end
-
-                stack[loop_level] = loops_cache[loop_cache_key]
+                stack[loop_level] = loop_def
                 loop_stack_by_context[context_key] = stack[0..loop_level]
-                loops_cache[loop_cache_key]
+                loop_def
               else
                 stack[loop_level] || table
               end
