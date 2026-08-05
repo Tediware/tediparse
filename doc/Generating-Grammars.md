@@ -40,8 +40,8 @@ Input: the ASC X12 Table Data distribution
 To obtain the Table Data you need an **ASC X12 license**; with one in hand you
 can download the distribution from <https://ecommerce.x12.org/downloads>.
 
-The Table Data is a set of `.TXT` files (ISO-8859-1, CSV-shaped), one
-header/detail pair per kind of definition, plus a free-form file:
+The Table Data is a set of CSV-shaped `.TXT` files, one header/detail pair per
+kind of definition, plus a free-form file:
 
 | File           | Holds                                              |
 | -------------- | -------------------------------------------------- |

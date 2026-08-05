@@ -88,6 +88,22 @@ v Unreleased
     variants) used to exercise the engine in tests. Doubles as the
     canonical grammar-authoring reference.
 
+  **Bug fixes**
+
+  * `Schema::Generation::FlatFileReader` declared the wrong encoding for
+    every supported release. It read the ASC X12 Table Data as ISO-8859-1;
+    004060 through 007010 are Windows-1252 (so CP1252 smart punctuation at
+    0x80-0x9F decoded to C1 control characters) and 008010 is UTF-8 (so
+    every multi-byte character was double-encoded). Both transcoded
+    silently, and the damage reached the generated grammar. The encoding is
+    now declared per release in `FlatFileReader::SOURCE_ENCODINGS`; an
+    undeclared release is read as UTF-8, deliberately, so a wrong assumption
+    raises instead of writing mojibake. Decoded text has CP1252 smart
+    quotes and dashes normalized to ASCII (accented letters are left
+    alone), and a C1 control character surviving the decode raises with the
+    file, line and codepoint. **Consumers should regenerate their grammar
+    tree**: affected element and segment names change.
+
   **Bug fixes** (carried over from prior fork work)
 
   * Fix `too much non-determinism` error when a `LoopDef` contains repeated

@@ -6,17 +6,70 @@ module Stupidedi
   module Schema
     module Generation
       # Reads ASC X12 Table Data flat files (the official .TXT distribution, CSV
-      # despite the extension, ISO-8859-1 encoded) and builds the in-memory
-      # Models tree the generators consume. This is Layer A - the inverse of the
-      # Tediware x12:import importer, with no database.
+      # despite the extension) and builds the in-memory Models tree the
+      # generators consume. This is Layer A - the inverse of the Tediware
+      # x12:import importer, with no database.
       #
       #   release = FlatFileReader.read("vendor/x12/table_data/005010", "005010")
       #
       # Files consumed: ELEHEAD/ELEDETL (simple elements), COMHEAD/COMDETL
       # (composites), SEGHEAD/SEGDETL (segments + element uses), SETHEAD/SETDETL
       # (transaction sets + structure), FREEFORM (code lists + syntax notes).
+      #
+      # The distribution's encoding varies by release - see SOURCE_ENCODINGS. It
+      # is *not* ISO-8859-1 for any release we support, despite that being the
+      # obvious guess: releases through 007010 are Windows-1252 and 008010 is
+      # UTF-8.
       class FlatFileReader
-        ENCODING = "ISO-8859-1:UTF-8"
+        # Declared source encoding per ASC X12 release. CP1252 and ISO-8859-1
+        # agree everywhere except 0x80-0x9F, which carries smart punctuation in
+        # the former and undefined C1 controls in the latter - so reading a
+        # CP1252 distribution as Latin-1 turns a curly apostrophe into U+0092
+        # while leaving accented letters intact, which is why the damage hides.
+        # 004010's .TXT files are pure ASCII, so its entry is a formality.
+        SOURCE_ENCODINGS = {
+          "004010" => "Windows-1252",
+          "004060" => "Windows-1252",
+          "005010" => "Windows-1252",
+          "006010" => "Windows-1252",
+          "007010" => "Windows-1252",
+          "008010" => "UTF-8"
+        }.freeze
+
+        # An undeclared release decodes as UTF-8, deliberately. Single-byte
+        # encodings decode every possible byte, so guessing one can only fail
+        # silently; UTF-8 raises on the first byte that is not valid UTF-8, so a
+        # new distribution nobody declared stops generation instead of writing
+        # mojibake into the grammar.
+        DEFAULT_SOURCE_ENCODING = "UTF-8"
+
+        # CP1252 smart punctuation, normalized to ASCII after decoding. This is
+        # not cosmetic: consumers derive identifiers and translated values from
+        # these strings with ASCII-only munging (delete("'") and friends), so a
+        # U+2019 survives the munging and stays damaged downstream. 008010's own
+        # source already uses straight apostrophes, so this converges the older
+        # releases onto what the newest one says. Punctuation only - accented
+        # letters are left alone ("Fiancee", "Denominacion" and "Marzen" keep
+        # their real characters).
+        PUNCTUATION = {
+          "‘" => "'",  # left single quotation mark
+          "’" => "'",  # right single quotation mark
+          "“" => '"',  # left double quotation mark
+          "”" => '"',  # right double quotation mark
+          "–" => "-",  # en dash
+          "—" => "-"   # em dash
+        }.freeze
+
+        PUNCTUATION_PATTERN = Regexp.union(PUNCTUATION.keys).freeze
+
+        # C1 controls are never legitimate in this data. Finding one after a
+        # successful decode means the declared encoding is wrong (Latin-1 read
+        # of CP1252 smart punctuation lands squarely here), so reject rather
+        # than carry it into the generated grammar.
+        C1_CONTROLS = (0x80..0x9F).map { |cp| cp.chr(Encoding::UTF_8) }.join.freeze
+
+        # U+FEFF, spelled numerically because it is invisible in source.
+        BOM = 0xFEFF.chr(Encoding::UTF_8).freeze
 
         def self.read(dir, release_code)
           new(dir, release_code).read
@@ -267,17 +320,15 @@ module Stupidedi
             process_freeform_block(current_tag, current_data) if current_tag && current_data.size >= 2
           end
 
-          File.open(path, "r:#{ENCODING}") do |file|
-            file.each_line do |line|
-              line = line.encode("UTF-8", invalid: :replace, undef: :replace, replace: "").strip
+          read_source(path).each_line do |line|
+            line = line.strip
 
-              if line.start_with?("*")
-                flush.call
-                current_tag = line[1..]
-                current_data = []
-              elsif !line.empty?
-                current_data << line
-              end
+            if line.start_with?("*")
+              flush.call
+              current_tag = line[1..]
+              current_data = []
+            elsif !line.empty?
+              current_data << line
             end
           end
 
@@ -346,7 +397,62 @@ module Stupidedi
 
         def each_csv(filename)
           path = find_file(filename) or return
-          CSV.foreach(path, encoding: ENCODING) { |row| yield row }
+          CSV.parse(read_source(path)) { |row| yield row }
+        end
+
+        # Reads one table-data file and returns validated, normalized UTF-8.
+        #
+        # The whole file is decoded up front rather than streamed: these files
+        # are small, and one decode point is what makes the encoding a single
+        # declared fact instead of something each read site guesses at.
+        def read_source(path)
+          text = decode(path)
+          text = text.gsub(PUNCTUATION_PATTERN, PUNCTUATION)
+          reject_c1_controls!(text, path)
+          text
+        end
+
+        def decode(path)
+          raw = File.binread(path).force_encoding(source_encoding)
+          raise decode_error(path, "invalid byte sequence") unless raw.valid_encoding?
+
+          # A UTF-8 BOM would otherwise ride along in the first field of the
+          # first record and corrupt its key.
+          raw.encode("UTF-8").delete_prefix(BOM)
+        rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError => e
+          raise decode_error(path, e.message)
+        end
+
+        def source_encoding
+          SOURCE_ENCODINGS.fetch(release_code, DEFAULT_SOURCE_ENCODING)
+        end
+
+        def decode_error(path, detail)
+          provenance =
+            if SOURCE_ENCODINGS.key?(release_code)
+              "declared for release #{release_code}: #{detail}. Correct that release's entry in"
+            else
+              "assumed for release #{release_code}, which is not declared: #{detail}. " \
+                "Add the release's real encoding to"
+            end
+
+          ArgumentError.new(
+            "Could not decode #{path} as #{source_encoding}, #{provenance} " \
+            "#{self.class}::SOURCE_ENCODINGS."
+          )
+        end
+
+        def reject_c1_controls!(text, path)
+          return if text.count(C1_CONTROLS).zero?
+
+          text.each_line.with_index(1) do |line, lineno|
+            char = line.each_char.find { |c| C1_CONTROLS.include?(c) } or next
+
+            raise ArgumentError,
+              format("C1 control character U+%04X at %s line %d, which means release %s is not " \
+                     "%s. Correct %s::SOURCE_ENCODINGS.",
+                     char.ord, path, lineno, release_code, source_encoding, self.class)
+          end
         end
 
         # Case-insensitive file lookup: X12 table data uses inconsistent casing

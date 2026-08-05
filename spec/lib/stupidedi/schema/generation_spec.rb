@@ -122,6 +122,98 @@ describe Stupidedi::Schema::Generation do
     end
   end
 
+  # The .TXT distribution is Windows-1252 through 007010 and UTF-8 from 008010.
+  # Reading it as ISO-8859-1 (the obvious guess, and what this reader used to do)
+  # transcodes silently: accented letters survive, but CP1252 smart punctuation
+  # at 0x80-0x9F becomes a C1 control character in the generated grammar.
+  describe "source encoding" do
+    # A minimal table-data directory: one element, plus optional FREEFORM.
+    def table_data(dir, elehead, freeform = nil)
+      FileUtils.mkdir_p(dir)
+      File.binwrite(File.join(dir, "ELEHEAD.TXT"), elehead)
+      File.binwrite(File.join(dir, "ELEDETL.TXT"), "127,AN,1,30\r\n")
+      File.binwrite(File.join(dir, "FREEFORM.TXT"), freeform) if freeform
+      dir
+    end
+
+    def element_name(dir, release_code)
+      Generation::FlatFileReader.read(dir, release_code).elements.first.name
+    end
+
+    it "declares an encoding for every supported release" do
+      expect(Generation::FlatFileReader::SOURCE_ENCODINGS.keys)
+        .to match_array(Generation::VERSION_MODULES.keys)
+    end
+
+    it "decodes Windows-1252 punctuation and normalizes it to ASCII" do
+      Dir.mktmpdir do |tmp|
+        # 0x92 right single quote, 0x96 en dash - C1 controls read as Latin-1.
+        dir = table_data(tmp, "127,Shipper\x92s Reference \x96 Number\r\n")
+        expect(element_name(dir, "005010")).to eq("Shipper's Reference - Number")
+      end
+    end
+
+    it "normalizes punctuation in FREEFORM code names too" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "127,Reference Identification\r\n",
+                         "*ELECOD\r\n127, ,00,1\r\nShipper\x92s Original\r\n")
+        element = Generation::FlatFileReader.read(dir, "007010").elements.first
+        expect(element.element_codes.map(&:name)).to eq(["Shipper's Original"])
+      end
+    end
+
+    it "does not transliterate accented letters" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "127,Fianc\xE9e Denominaci\xF3n M\xE4rzen\r\n")
+        expect(element_name(dir, "007010")).to eq("Fiancée Denominación Märzen")
+      end
+    end
+
+    it "reads 008010 as UTF-8 rather than double-encoding it" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "127,Fianc\xC3\xA9e\r\n") # e-acute, already UTF-8
+        expect(element_name(dir, "008010")).to eq("Fiancée")
+      end
+    end
+
+    # An undeclared release must default to UTF-8, not to a single-byte
+    # encoding: single-byte encodings decode every byte, so a wrong guess can
+    # only fail silently.
+    it "fails on an undeclared release whose data is not UTF-8" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "127,Shipper\x92s Reference\r\n")
+        expect { Generation::FlatFileReader.read(dir, "009010") }
+          .to raise_error(ArgumentError, /Could not decode.*as UTF-8.*009010.*SOURCE_ENCODINGS/m)
+      end
+    end
+
+    it "rejects a C1 control character, naming the file, line and codepoint" do
+      Dir.mktmpdir do |tmp|
+        # Valid UTF-8 that decodes to U+0092 - i.e. data already damaged upstream.
+        dir = table_data(tmp, "127,First\r\n128,Shipper\xC2\x92s Reference\r\n")
+        expect { Generation::FlatFileReader.read(dir, "008010") }
+          .to raise_error(ArgumentError, /U\+0092 at .*ELEHEAD\.TXT line 2/)
+      end
+    end
+
+    it "reports a byte that is undefined in the declared encoding" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "127,Bad\x81Name\r\n") # 0x81 is undefined in CP1252
+        expect { Generation::FlatFileReader.read(dir, "005010") }
+          .to raise_error(ArgumentError, /Could not decode.*as Windows-1252/m)
+      end
+    end
+
+    it "ignores a UTF-8 BOM instead of folding it into the first key" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "\xEF\xBB\xBF127,Reference Identification\r\n")
+        element = Generation::FlatFileReader.read(dir, "008010").elements.first
+        expect(element.code).to eq("127")
+        expect(element.name).to eq("Reference Identification")
+      end
+    end
+  end
+
   describe "generators" do
     let(:release) { Generation::FlatFileReader.read(fixture_dir, "005010") }
 
