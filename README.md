@@ -84,8 +84,8 @@ This reads the flat files and writes a grammar tree under `<out>/<namespace>/`
 `functional_group_def.rb`, one file per transaction set under `standards/`, an
 interchange envelope under `interchanges/`, and a `stupidedi_registration.rb`
 that wires everything onto a `Config`. Use `--dry-run` to preview without
-writing. Supported releases: `004010`, `004060`, `005010`, `006010`, `007010`,
-`008010`.
+writing. Supported releases: `003060`, `004010`, `004060`, `005010`, `006010`,
+`007010`, `008010`.
 
 You can keep several releases in one output tree. Generating an additional
 release preserves the ones already present: `stupidedi_registration.rb` (and the

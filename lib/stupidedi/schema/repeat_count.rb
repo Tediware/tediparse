@@ -66,7 +66,7 @@ module Stupidedi
 
       def bounded(n)
         if n < 1
-          raise Exception::InvalidSchemaError,
+          raise Exceptions::InvalidSchemaError,
             "n must be positive"
         elsif n == 1
           RepeatCount::Once

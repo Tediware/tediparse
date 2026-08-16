@@ -122,6 +122,71 @@ describe Stupidedi::Schema::Generation do
     end
   end
 
+  # The distribution occasionally ships a column-shifted SETDETL row: a value
+  # lands one field left of where it belongs. What the reader makes of it is
+  # either a loop or segment that may occur zero times — RepeatCount.bounded(0)
+  # raises, so the emitted grammar dies when the consumer loads it, naming
+  # nothing — or a loop identified as "0", which builds and loads fine and
+  # quietly reparents the rest of the table. Reject the row here instead, where
+  # it can still be pointed at.
+  describe "defective structure rows" do
+    # Copy the committed fixture, replacing one SETDETL row.
+    def corrupt_setdetl(source_dir, from, to)
+      Dir.mktmpdir do |tmp|
+        dir = File.join(tmp, "table_data")
+        FileUtils.cp_r(source_dir, dir)
+
+        path = File.join(dir, "SETDETL.TXT")
+        rows = File.read(path)
+        raise "fixture row not found: #{from}" unless rows.include?(from)
+
+        File.write(path, rows.sub(from, to))
+        yield dir
+      end
+    end
+
+    it "rejects a loop whose repeat count shifted out of its column" do
+      corrupt_setdetl(fixture_dir,
+                      '"123","2","0100","REF","O","1","1","200","REF"',
+                      '"123","2","0100","REF","O","1","1","","REF"') do |dir|
+        expect { Generation::FlatFileReader.read(dir, "005010") }
+          .to raise_error(ArgumentError,
+                          /SETDETL\.TXT: transaction set 123, area 2, sequence 0100 \(REF\): loop repeat "" parses to a repeat count of 0/)
+      end
+    end
+
+    it 'rejects "0" as a loop identifier' do
+      corrupt_setdetl(fixture_dir,
+                      '"123","2","0100","REF","O","1","1","200","REF"',
+                      '"123","2","0100","REF","O","1","1","200","0"') do |dir|
+        expect { Generation::FlatFileReader.read(dir, "005010") }
+          .to raise_error(ArgumentError, /sequence 0100 \(REF\): "0" is not a loop identifier/)
+      end
+    end
+
+    it "rejects a segment use whose maximum use is blank" do
+      corrupt_setdetl(fixture_dir,
+                      '"204","1","0200","BGN","M","1","0","0",""',
+                      '"204","1","0200","BGN","M","","0","0",""') do |dir|
+        expect { Generation::FlatFileReader.read(dir, "005010") }
+          .to raise_error(ArgumentError,
+                          /transaction set 204, area 1, sequence 0200 \(BGN\): maximum use "" parses to a repeat count of 0/)
+      end
+    end
+
+    it "leaves an unbounded maximum use alone" do
+      corrupt_setdetl(fixture_dir,
+                      '"204","1","0200","BGN","M","1","0","0",""',
+                      '"204","1","0200","BGN","M",">1","0","0",""') do |dir|
+        release = Generation::FlatFileReader.read(dir, "005010")
+        heading = release.transaction_sets.find { |t| t.code == "204" }
+                         .table_definitions.find { |t| t.area == "heading" }
+        bgn = heading.ordered_children.find { |c| c.segment.code == "BGN" }
+        expect(bgn.max_reps).to be_nil
+      end
+    end
+  end
+
   # The .TXT distribution is Windows-1252 through 007010 and UTF-8 from 008010.
   # Reading it as ISO-8859-1 (the obvious guess, and what this reader used to do)
   # transcodes silently: accented letters survive, but CP1252 smart punctuation
@@ -393,6 +458,30 @@ describe Stupidedi::Schema::Generation do
 
     it "omits the master loader by default" do
       expect(@results.map(&:path)).not_to include(File.join(@out, "edi.rb"))
+    end
+  end
+
+  # The fixture's structure is release-agnostic, so pointing a second release
+  # code at it exercises the per-release naming end to end: module, directory,
+  # interchange version and registration keys.
+  describe "a run against 003060" do
+    it "generates a thirty_sixty tree under interchange 00306" do
+      Dir.mktmpdir do |out|
+        results = Generation.run(table_data: fixture_dir, release: "003060", out: out,
+                                 write: false, logger: ->(_) {})
+
+        expect(results.map(&:relative_path)).to include(
+          "edi/thirty_sixty.rb",
+          "edi/thirty_sixty/element_defs.rb",
+          "edi/thirty_sixty/standards/SM204.rb",
+          "edi/interchanges/three_oh_six.rb"
+        )
+
+        reg = results.find { |r| r.relative_path == "edi/stupidedi_registration.rb" }
+        expect(reg.content).to include('INTERCHANGE_VERSIONS = %w[00306].freeze')
+        expect(reg.content).to include('FUNCTIONAL_GROUP_VERSIONS = %w[003060].freeze')
+        expect(reg.content).to include('x.register("003060", "SM", "204") { Edi::ThirtySixty::Standards::SM204 }')
+      end
     end
   end
 

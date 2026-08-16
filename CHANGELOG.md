@@ -88,7 +88,39 @@ v Unreleased
     variants) used to exercise the engine in tests. Doubles as the
     canonical grammar-authoring reference.
 
+  * Grammar generation supports release `003060` (module `ThirtySixty`,
+    interchange version `00306`). Its ASC X12 Table Data is pure ASCII,
+    and is declared as Windows-1252 in
+    `FlatFileReader::SOURCE_ENCODINGS` alongside the other pre-008010
+    releases rather than being left to the UTF-8 default.
+
   **Bug fixes**
+
+  * `Schema::Generation::FlatFileReader` now rejects two shapes of
+    defective SETDETL row instead of carrying them into the generated
+    grammar. Both are column shifts in the source distribution — a value
+    landing one field left of where it belongs — which the neighbouring
+    release carries correctly:
+
+    - A blank or zero loop repeat, or a blank maximum use, produced
+      `RepeatCount.bounded(0)`. That is not a repeat count the engine can
+      build, so the emitted grammar raised when the consumer loaded it,
+      naming neither the release nor the transaction set nor the row.
+    - `"0"` in the loop-id column (whatever the repeat says) opened a
+      loop identified as `"0"`. Nothing objects to that: it builds, loads
+      and parses, quietly reparenting every row that follows it — in one
+      real case the rest of the heading table, which then could not be
+      parsed past that point.
+
+    The reader now raises at generation time, naming the file,
+    transaction set, area, sequence and segment, so the row can be
+    corrected in the table data.
+
+  * `Schema::RepeatCount.bounded` raised
+    `Exception::InvalidSchemaError`, which resolves to `::Exception` and
+    has no such constant, so a non-positive count surfaced as
+    `NameError: uninitialized constant Exception::InvalidSchemaError`
+    rather than the intended `InvalidSchemaError, "n must be positive"`.
 
   * `Schema::Generation::FlatFileReader` declared the wrong encoding for
     every supported release. It read the ASC X12 Table Data as ISO-8859-1;

@@ -7,6 +7,7 @@ module Stupidedi
       # generated grammar (e.g. "005010" => "FiftyTen"). This is the canonical
       # list of releases the generator supports.
       VERSION_MODULES = {
+        "003060" => "ThirtySixty",
         "004010" => "FortyTen",
         "004060" => "FortySixty",
         "005010" => "FiftyTen",

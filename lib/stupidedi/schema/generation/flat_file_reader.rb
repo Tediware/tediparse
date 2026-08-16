@@ -26,8 +26,11 @@ module Stupidedi
         # the former and undefined C1 controls in the latter - so reading a
         # CP1252 distribution as Latin-1 turns a curly apostrophe into U+0092
         # while leaving accented letters intact, which is why the damage hides.
-        # 004010's .TXT files are pure ASCII, so its entry is a formality.
+        # 003060's and 004010's .TXT files are pure ASCII, so their entries are
+        # a formality - declared anyway, because an undeclared release falls
+        # through to the UTF-8 default and that is a decision, not an oversight.
         SOURCE_ENCODINGS = {
+          "003060" => "Windows-1252",
           "004010" => "Windows-1252",
           "004060" => "Windows-1252",
           "005010" => "Windows-1252",
@@ -238,6 +241,7 @@ module Stupidedi
         def read_structure
           tables_by_ts = Hash.new { |h, k| h[k] = {} }
           loop_stack_by_context = Hash.new { |h, k| h[k] = [] }
+          path = find_file("SETDETL.TXT")
 
           each_csv("SETDETL.TXT") do |row|
             ts_code = row[0]
@@ -253,6 +257,8 @@ module Stupidedi
             transaction_set = @transaction_sets_by_code[ts_code] or next
             segment = @segments_by_code[segment_code] or next
 
+            where = structure_row(path, ts_code, area, sequence, segment_code)
+
             table = (tables_by_ts[ts_code][area] ||= build_table(transaction_set, area))
             context_key = "#{ts_code}_#{area}"
             stack = loop_stack_by_context[context_key]
@@ -266,11 +272,12 @@ module Stupidedi
                 # an empty loop_id), and loop IDs are only unique within their
                 # nesting context — the same ID can open distinct loops at
                 # different positions in one area, so no caching by ID here.
+                reject_zero_loop_id!(loop_id, where)
                 loop_parent = stack[loop_level - 1] || table
 
                 loop_def = Models::LoopDefinition.new(
                   identifier: loop_id,
-                  max_reps: parse_reps(loop_repeat),
+                  max_reps: parse_reps!(loop_repeat, "loop repeat", where),
                   position: sequence.to_i,
                   children: []
                 )
@@ -291,9 +298,47 @@ module Stupidedi
               x12_sequence: sequence,
               position: position,
               requirement: map_requirement(requirement_code),
-              max_reps: parse_reps(max_use)
+              max_reps: parse_reps!(max_use, "maximum use", where)
             )
           end
+        end
+
+        # Identifies one SETDETL row the way a human finds it in the file.
+        def structure_row(path, ts_code, area, sequence, segment_code)
+          "#{path}: transaction set #{ts_code}, area #{area}, sequence #{sequence} " \
+            "(#{segment_code})"
+        end
+
+        # A zero repeat count is not representable: RepeatCount.bounded(0)
+        # raises, so the emitted grammar dies the moment a consumer loads it,
+        # naming neither the release nor the transaction set nor the row - by
+        # then the source distribution is a long way behind you. Catch it here,
+        # where the row can still be pointed at.
+        #
+        # Both this and reject_zero_loop_id! guard the same underlying defect: a
+        # column shift in the source distribution, where a value lands one field
+        # left of where it belongs and the neighbouring release carries the row
+        # correctly.
+        def parse_reps!(value, column, where)
+          reps = parse_reps(value)
+          return reps if reps.nil? || reps.positive?
+
+          raise ArgumentError,
+            "#{where}: #{column} #{value.inspect} parses to a repeat count of #{reps}, which no loop " \
+            "or segment can carry. The row is defective, usually a column shift - compare it " \
+            "against the same row in a neighbouring release and correct it in the table data."
+        end
+
+        # The shift is worse when it lands in the loop id column, because
+        # nothing downstream objects: a loop identified as "0" builds, loads and
+        # parses, quietly reparenting every row that follows it.
+        def reject_zero_loop_id!(loop_id, where)
+          return unless loop_id == "0"
+
+          raise ArgumentError,
+            "#{where}: \"0\" is not a loop identifier. The row is defective, usually a column " \
+            "shift - compare it against the same row in a neighbouring release and correct it " \
+            "in the table data."
         end
 
         def build_table(transaction_set, area)
