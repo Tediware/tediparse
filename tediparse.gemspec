@@ -8,6 +8,13 @@ Gem::Specification.new do |s|
 
   s.version = Stupidedi::VERSION
   s.authors = ["Kyle Putnam", "Isi Robayna", "Adrian Duyzer"]
+
+  # Set explicitly, though "ruby" is already the default. RubyGems 3.6.1
+  # serializes an unset platform as `original_platform: ''`, which
+  # rubygems.org rejects at push time with "Platform can't be blank".
+  # Assigning it makes the attribute serialize correctly on any version.
+  s.platform = Gem::Platform::RUBY
+
   s.email   = "adrian@tediware.com"
   s.license = "BSD-3-Clause"
 
