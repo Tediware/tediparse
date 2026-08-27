@@ -1,4 +1,8 @@
-v Unreleased
+v 2.0.0 - Aug 27, 2026
+
+  First release of tediparse. The version continues the `stupidedi`
+  numbering (upstream's last release was 1.4.5) and steps the major to
+  mark the breaking removal of X12 grammar content described below.
 
   Tediparse is now a maintained fork of `stupidedi` (Kyle Putnam, upstream
   maintained by Isi Robayna). The internal `Stupidedi` module name is

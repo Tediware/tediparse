@@ -7,12 +7,19 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/Tediware/tediparse"
 
   s.version = Stupidedi::VERSION
-  s.date    = "2024-06-24"
   s.authors = ["Kyle Putnam", "Isi Robayna", "Adrian Duyzer"]
   s.email   = "adrian@tediware.com"
   s.license = "BSD-3-Clause"
 
-  s.files             = ["README.md", "Rakefile",
+  s.metadata = {
+    "source_code_uri" => s.homepage,
+    "changelog_uri"   => "#{s.homepage}/blob/master/CHANGELOG.md",
+    "bug_tracker_uri" => "#{s.homepage}/issues",
+  }
+
+  s.required_ruby_version = ">= 2.6"
+
+  s.files             = ["README.md", "CHANGELOG.md", "LICENSE", "Rakefile",
                          "lib/**/*",
                          "bin/**/*",
                          "doc/**/*.md"].map {|glob| Dir[glob] }.flatten
