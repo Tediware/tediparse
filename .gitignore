@@ -1,3 +1,6 @@
 build/generated
 .bundle
 .ruby-version
+
+# Packaged gems produced by `gem build`
+*.gem
