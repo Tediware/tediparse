@@ -1,1 +1,1 @@
-"C001","Composite Reference"
+"CQ1","Synthetic Composite"

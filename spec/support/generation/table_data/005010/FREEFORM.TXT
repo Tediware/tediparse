@@ -1,12 +1,12 @@
 *ELECOD
-353, ,00,1
-Original
+9013, ,Q1,1
+First Intent
 *ELECOD
-353, ,01,1
-Cancellation
+9013, ,Q2,1
+Second Intent
 *SEGNTE
-BGN,02,S,1
+QA1,02,S,1
 This semantic note must be ignored by the reader.
 *SEGNTE
-BGN,01,N,1
+QA1,01,N,1
 P0203
