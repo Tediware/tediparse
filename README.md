@@ -106,18 +106,6 @@ machine; you bring the material. The committed fixture under
 `spec/support/generation/table_data/` is a hand-written synthetic grammar in
 the same flat-file format, not real X12 content.
 
-### Conformance suite
-
-If you have private grammars and need to keep them tested against tediparse,
-the upstream X12 fixture corpus and grammar tree remain recoverable from the
-pre-removal commit:
-
-    git fetch --tags
-    git worktree add ../conformance pre-x12-removal
-
-Build the conformance suite against that worktree's fixtures, layer your
-licensed grammar on top, and run it out-of-tree.
-
 ## Attribution
 
 This product includes software from `stupidedi` by Kyle Putnam, available at

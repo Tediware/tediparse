@@ -5,8 +5,7 @@ require_relative "segment_defs"
 # Synthetic FunctionalGroupDef, registered under version "DEMO01".
 #
 # Modelled on lib/stupidedi/versions/005010/functional_group_def.rb in the
-# pre-x12-removal git tag (the upstream X12 content tree, removed from this
-# branch).
+# upstream stupidedi gem (X12 content that tediparse does not ship).
 #
 module Synthetic
   s = Stupidedi::Schema
