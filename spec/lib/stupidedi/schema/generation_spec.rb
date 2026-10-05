@@ -186,8 +186,8 @@ describe Stupidedi::Schema::Generation do
     end
   end
 
-  # The .TXT distribution is Windows-1252 through 007010 and UTF-8 from 008010.
-  # Reading it as ISO-8859-1 (the obvious guess, and what this reader used to do)
+  # The .TXT distribution is Windows-1252 through 007010, UTF-8 for 008010 and
+  # Windows-1252 again for 008060. Reading it as ISO-8859-1 (the obvious guess, and what this reader used to do)
   # transcodes silently: accented letters survive, but CP1252 smart punctuation
   # at 0x80-0x9F becomes a C1 control character in the generated grammar.
   describe "source encoding" do
@@ -237,6 +237,13 @@ describe Stupidedi::Schema::Generation do
       Dir.mktmpdir do |tmp|
         dir = table_data(tmp, "9014,Fianc\xC3\xA9e\r\n") # e-acute, already UTF-8
         expect(element_name(dir, "008010")).to eq("Fiancée")
+      end
+    end
+
+    it "reads 008060 as Windows-1252, unlike the release before it" do
+      Dir.mktmpdir do |tmp|
+        dir = table_data(tmp, "9014,Fianc\xE9e\r\n") # e-acute, a single byte
+        expect(element_name(dir, "008060")).to eq("Fiancée")
       end
     end
 

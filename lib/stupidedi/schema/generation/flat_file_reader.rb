@@ -18,8 +18,9 @@ module Stupidedi
       #
       # The distribution's encoding varies by release - see SOURCE_ENCODINGS. It
       # is *not* ISO-8859-1 for any release we support, despite that being the
-      # obvious guess: releases through 007010 are Windows-1252 and 008010 is
-      # UTF-8.
+      # obvious guess: releases through 007010 are Windows-1252, 008010 is
+      # UTF-8, and 008060 is Windows-1252 again, so no release's encoding can
+      # be inferred from the one before it.
       class FlatFileReader
         # Declared source encoding per ASC X12 release. CP1252 and ISO-8859-1
         # agree everywhere except 0x80-0x9F, which carries smart punctuation in
@@ -36,7 +37,8 @@ module Stupidedi
           "005010" => "Windows-1252",
           "006010" => "Windows-1252",
           "007010" => "Windows-1252",
-          "008010" => "UTF-8"
+          "008010" => "UTF-8",
+          "008060" => "Windows-1252"
         }.freeze
 
         # An undeclared release decodes as UTF-8, deliberately. Single-byte

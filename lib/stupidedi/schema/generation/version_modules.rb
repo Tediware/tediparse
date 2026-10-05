@@ -13,7 +13,8 @@ module Stupidedi
         "005010" => "FiftyTen",
         "006010" => "SixtyTen",
         "007010" => "SeventyTen",
-        "008010" => "EightyTen"
+        "008010" => "EightyTen",
+        "008060" => "EightySixty"
       }.freeze
 
       # Maps X12 requirement designators to Stupidedi ElementReq names.

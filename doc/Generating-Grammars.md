@@ -84,7 +84,7 @@ tediparse register --out lib
 ```
 
 Supported releases: `003060`, `004010`, `004060`, `005010`, `006010`,
-`007010`, `008010`. An unsupported release code is rejected before anything
+`007010`, `008010`, `008060`. An unsupported release code is rejected before anything
 is read.
 
 From Ruby

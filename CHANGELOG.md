@@ -1,3 +1,10 @@
+v Unreleased
+
+  * Grammar generation supports release `008060` (module `EightySixty`,
+    interchange version `00806`). Its ASC X12 Table Data is Windows-1252,
+    unlike 008010's UTF-8, and is declared so in
+    `FlatFileReader::SOURCE_ENCODINGS`.
+
 v 2.0.0 - Aug 27, 2026
 
   First release of tediparse. The version continues the `stupidedi`
