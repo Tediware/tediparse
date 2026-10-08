@@ -21,16 +21,38 @@ module Stupidedi
       # been consumed. The extra parse trees are returned (in memory)
       # via the {StateMachine} to aide diagnosis.
       #
+      # The `max_rejected_segments` option stops the parse by raising
+      # {Exceptions::RejectedSegmentLimitError} once more than that many
+      # segments have been rejected. Memory grows with the square of the
+      # number of rejected segments, so without a limit a large document
+      # that is mostly rejected can exhaust memory. The default is no limit.
+      #
       # @return [(StateMachine, Reader::Result)]
       def read(reader, options = {})
-        limit    = options.fetch(:nondeterminism, 1)
-        machine  = self
-        reader_e = reader.read_segment
+        limit          = options.fetch(:nondeterminism, 1)
+        max_rejected   = options[:max_rejected_segments]
+        rejected       = 0
+        first_rejected = nil
+        machine        = self
+        reader_e       = reader.read_segment
 
         while reader_e.defined?
           reader_e = reader_e.flatmap do |segment_tok, reader_|
             machine, reader__ =
               machine.insert(segment_tok, false, reader_)
+
+            unless max_rejected.nil?
+              failures = machine.active.select { |m| Values::InvalidSegmentVal === m.node.zipper.node }
+
+              if failures.any?
+                rejected       += failures.length
+                first_rejected ||= failures.first.node.zipper.node
+
+                if rejected > max_rejected
+                  raise Exceptions::RejectedSegmentLimitError.new(rejected, first_rejected)
+                end
+              end
+            end
 
             if machine.active.length <= limit
               reader__.read_segment

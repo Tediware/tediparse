@@ -13,6 +13,14 @@ v Unreleased
     unaffected. Regenerate, or delete the `autoload` lines from existing
     trees.
 
+  * `Parser::StateMachine#read` accepts a `max_rejected_segments` option.
+    Once more than that many segments have been rejected, it raises
+    `Exceptions::RejectedSegmentLimitError` (a `ParseError`) naming the
+    count and the first rejected segment. Memory grows with the square of
+    the number of rejected segments, so a large document whose envelope
+    or transaction set is not registered can otherwise exhaust memory.
+    Without the option, nothing changes.
+
 v 2.0.0 - Aug 27, 2026
 
   First release of tediparse. The version continues the `stupidedi`

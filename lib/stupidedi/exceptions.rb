@@ -7,6 +7,7 @@ module Stupidedi
     autoload :MissingGrammarError,    "stupidedi/exceptions/missing_grammar_error"
     autoload :OutputError,            "stupidedi/exceptions/output_error"
     autoload :ParseError,             "stupidedi/exceptions/parse_error"
+    autoload :RejectedSegmentLimitError, "stupidedi/exceptions/rejected_segment_limit_error"
     autoload :TokenizeError,          "stupidedi/exceptions/tokenize_error"
     autoload :ZipperError,            "stupidedi/exceptions/zipper_error"
   end
