@@ -17,6 +17,17 @@ module Stupidedi
       class MasterLoaderGenerator
         include Support
 
+        # Per-version support files, in dependency order.
+        SUPPORT_FILES = %w[
+          element_reqs
+          element_types
+          segment_reqs
+          syntax_notes
+          element_defs
+          segment_defs
+          functional_group_def
+        ].freeze
+
         # @param roots [String, Array<String>] one or more base directories.
         def initialize(roots:, namespace: "Edi")
           @roots = Array(roots)
@@ -76,10 +87,13 @@ module Stupidedi
         def require_lines
           lines = []
 
-          # Version loaders first - they set up the per-version autoloads that the
-          # interchange and standards files (and the registration) depend on.
+          # Version modules and their support files first - the interchange and
+          # standards files (and the registration) depend on them.
           version_dirs.each do |dir_name, _|
             lines << require_line("#{namespace_path}/#{dir_name}")
+            SUPPORT_FILES.each do |file|
+              lines << require_line("#{namespace_path}/#{dir_name}/#{file}")
+            end
           end
 
           # Interchange envelopes.

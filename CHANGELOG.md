@@ -5,6 +5,14 @@ v Unreleased
     unlike 008010's UTF-8, and is declared so in
     `FlatFileReader::SOURCE_ENCODINGS`.
 
+  * The generated per-version module file (e.g. `edi/fifty_ten.rb`) no
+    longer declares relative-path `autoload`s for its support files. Under
+    Zeitwerk they replaced the autoloads Zeitwerk registers and made
+    concurrent first use of a grammar unsafe. The master loader now
+    requires the support files itself, so `--master-loader` consumers are
+    unaffected. Regenerate, or delete the `autoload` lines from existing
+    trees.
+
 v 2.0.0 - Aug 27, 2026
 
   First release of tediparse. The version continues the `stupidedi`

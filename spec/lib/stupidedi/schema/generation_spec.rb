@@ -463,6 +463,12 @@ describe Stupidedi::Schema::Generation do
       expect(integration_check(@out)).to include("INTEGRATION_OK")
     end
 
+    # A relative autoload would replace the absolute one a Zeitwerk consumer
+    # registers for the same constant, which is unsafe under concurrent autoload.
+    it "declares the version module without autoloading its support files" do
+      expect(File.read(File.join(@out, "edi/fifty_ten.rb"))).not_to match(/\bautoload\b/)
+    end
+
     it "omits the master loader by default" do
       expect(@results.map(&:path)).not_to include(File.join(@out, "edi.rb"))
     end
@@ -506,6 +512,9 @@ describe Stupidedi::Schema::Generation do
       expect(@results.map { |r| r.path.sub("#{@out}/", "") }).to include("edi.rb")
       loader = File.read(File.join(@out, "edi.rb"))
       expect(loader).to include('require "edi/fifty_ten"')
+      expect(loader).to include('require "edi/fifty_ten/element_defs"')
+      expect(loader.index('require "edi/fifty_ten/functional_group_def"'))
+        .to be < loader.index('require "edi/interchanges/five_oh_one"')
       expect(loader).to include('require "edi/interchanges/five_oh_one"')
       expect(loader).to include('require "edi/fifty_ten/standards/QZ901"')
       expect(loader).to include('require "edi/stupidedi_registration"')
@@ -680,6 +689,7 @@ describe Stupidedi::Schema::Generation do
     driver = <<~RUBY
       $LOAD_PATH.unshift(#{out.inspect})
       require "edi/fifty_ten"
+      #{Generation::MasterLoaderGenerator::SUPPORT_FILES.inspect}.each { |f| require "edi/fifty_ten/\#{f}" }
       Dir[File.join(#{out.inspect}, "edi/interchanges/*.rb")].sort.each { |f| require f }
       Dir[File.join(#{out.inspect}, "edi/fifty_ten/standards/*.rb")].sort.each { |f| require f }
       require "edi/stupidedi_registration"
